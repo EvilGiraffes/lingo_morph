@@ -1,6 +1,7 @@
 # Lingo Morph
 > [!Important]
 > This is a **Work In Progress**.
+
 This repository contains a library and a console application to run the library
 ## Library
 The library will be responsible to give an api to process text, this can be to alter or perform any operation on it.
