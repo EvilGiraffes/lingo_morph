@@ -1,4 +1,6 @@
 pub type Compose<A, B> = Pipe<B, A>;
+pub type RightIgnore<L, R> = LeftIgnore<R, L>;
+
 pub trait Processor<I> {
     type Output;
     fn process(&mut self, given: I) -> Self::Output;
@@ -29,6 +31,13 @@ pub trait Processor<I> {
         P: Processor<I, Output = PO>,
     {
         left_ignore(self, other)
+    }
+    fn right_ignore<P, PO>(self, other: P) -> RightIgnore<Self, P>
+    where
+        Self: Sized,
+        P: Processor<I, Output = PO>,
+    {
+        right_ignore(self, other)
     }
 
 pub struct Map<P, F> {
@@ -109,5 +118,13 @@ where
     R: Processor<I, Output = RO>,
 {
     LeftIgnore(left, right)
+}
+
+pub fn right_ignore<L, R, I, LO, RO>(left: L, right: R) -> RightIgnore<L, R>
+where
+    L: Processor<I, Output = LO>,
+    R: Processor<I, Output = RO>,
+{
+    left_ignore(right, left)
 }
 
