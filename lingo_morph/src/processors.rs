@@ -23,6 +23,13 @@ pub trait Processor<I> {
     {
         compose(self, other)
     }
+    fn left_ignore<P, PO>(self, other: P) -> LeftIgnore<Self, P>
+    where
+        Self: Sized,
+        P: Processor<I, Output = PO>,
+    {
+        left_ignore(self, other)
+    }
 
 pub struct Map<P, F> {
     processor: P,
@@ -54,6 +61,21 @@ where
     }
 }
 
+pub struct LeftIgnore<L, R>(L, R);
+
+impl<L, R, I, LO, RO> Processor<I> for LeftIgnore<L, R>
+where
+    I: Copy,
+    L: Processor<I, Output = LO>,
+    R: Processor<I, Output = RO>,
+{
+    type Output = RO;
+    fn process(&mut self, given: I) -> Self::Output {
+        _ = self.0.process(given);
+        self.1.process(given)
+    }
+}
+
 pub fn map<P, F, I, O, R>(processor: P, map: F) -> Map<P, F>
 where
     P: Processor<I, Output = O>,
@@ -79,5 +101,13 @@ where
     B: Processor<BI, Output = INT>,
 {
     pipe(into, from)
+}
+
+pub fn left_ignore<L, R, I, LO, RO>(left: L, right: R) -> LeftIgnore<L, R>
+where
+    L: Processor<I, Output = LO>,
+    R: Processor<I, Output = RO>,
+{
+    LeftIgnore(left, right)
 }
 
