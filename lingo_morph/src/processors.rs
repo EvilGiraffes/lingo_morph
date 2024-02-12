@@ -8,6 +8,13 @@ pub trait Processor<I> {
     {
         map(self, mapper)
     }
+    fn pipe<P, INT, PO>(self, other: P) -> Pipe<Self, P>
+    where
+        Self: Sized + Processor<I, Output = INT>,
+        P: Processor<INT, Output = PO>,
+    {
+        pipe(self, other)
+    }
 
 pub struct Map<P, F> {
     processor: P,
@@ -25,6 +32,20 @@ where
     }
 }
 
+pub struct Pipe<A, B>(A, B);
+
+impl<A, B, AI, INT, BO> Processor<AI> for Pipe<A, B>
+where
+    A: Processor<AI, Output = INT>,
+    B: Processor<INT, Output = BO>,
+{
+    type Output = BO;
+    fn process(&mut self, given: AI) -> Self::Output {
+        let intermediate = self.0.process(given);
+        self.1.process(intermediate)
+    }
+}
+
 pub fn map<P, F, I, O, R>(processor: P, map: F) -> Map<P, F>
 where
     P: Processor<I, Output = O>,
@@ -34,5 +55,13 @@ where
         processor,
         map,
     }
+}
+
+pub fn pipe<A, B, AI, INT, BO>(from: A, into: B) -> Pipe<A, B>
+where
+    A: Processor<AI, Output = INT>,
+    B: Processor<INT, Output = BO>,
+{
+    Pipe(from, into)
 }
 
