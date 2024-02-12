@@ -6,8 +6,8 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-log = { version = "0.4", optional = true }
+_log = { package = "log", version = "0.4", optional = true }
 
 [features]
 default = ["logging"]
-logging = ["dep:log"]
+logging = ["dep:_log"]
