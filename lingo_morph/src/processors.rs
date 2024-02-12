@@ -13,6 +13,9 @@ pub trait Processor<I> {
     {
         map(self, mapper)
     }
+    // TODO: filter
+    //       bind
+    //       swap
     fn pipe<P, INT, PO>(self, other: P) -> Pipe<Self, P>
     where
         Self: Sized + Processor<I, Output = INT>,
