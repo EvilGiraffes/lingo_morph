@@ -1,3 +1,5 @@
+use crate::Either;
+
 pub type Compose<A, B> = Pipe<B, A>;
 pub type RightIgnore<L, R> = LeftIgnore<R, L>;
 
@@ -39,6 +41,21 @@ pub trait Processor<I> {
     {
         right_ignore(self, other)
     }
+    fn left_or<P, O>(self, other: P) -> Or<Self, P>
+    where
+        Self: Sized + Processor<I, Output = Either<O, I>>,
+        P: Processor<I, Output = O>,
+    {
+        left_or(self, other)
+    }
+    fn right_or<P>(self, other: P) -> Or<P, Self>
+    where
+        Self: Sized,
+        P: Processor<I, Output = Either<Self::Output, I>>,
+    {
+        right_or(self, other)
+    }
+}
 
 pub struct Map<P, F> {
     processor: P,
@@ -85,6 +102,21 @@ where
     }
 }
 
+pub struct Or<A, B>(A, B);
+
+impl<A, B, I, O> Processor<I> for Or<A, B>
+where
+    A: Processor<I, Output = Either<O, I>>,
+    B: Processor<I, Output = O>,
+{
+    type Output = O;
+    fn process(&mut self, given: I) -> Self::Output {
+        self.0
+            .process(given)
+            .lunwrap_or_map(|given| self.1.process(given))
+    }
+}
+
 pub fn map<P, F, I, O, R>(processor: P, map: F) -> Map<P, F>
 where
     P: Processor<I, Output = O>,
@@ -128,3 +160,18 @@ where
     left_ignore(right, left)
 }
 
+pub fn left_or<A, B, I, O>(left: A, right: B) -> Or<A, B>
+where
+    A: Processor<I, Output = Either<O, I>>,
+    B: Processor<I, Output = O>,
+{
+    Or(left, right)
+}
+
+pub fn right_or<A, B, I, O>(left: A, right: B) -> Or<B, A>
+where
+    A: Processor<I, Output = O>,
+    B: Processor<I, Output = Either<O, I>>,
+{
+    left_or(right, left)
+}
