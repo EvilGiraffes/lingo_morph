@@ -1,3 +1,4 @@
+pub type Compose<A, B> = Pipe<B, A>;
 pub trait Processor<I> {
     type Output;
     fn process(&mut self, given: I) -> Self::Output;
@@ -14,6 +15,13 @@ pub trait Processor<I> {
         P: Processor<INT, Output = PO>,
     {
         pipe(self, other)
+    }
+    fn compose<P, PI>(self, other: P) -> Compose<Self, P>
+    where
+        Self: Sized,
+        P: Processor<PI, Output = I>,
+    {
+        compose(self, other)
     }
 
 pub struct Map<P, F> {
@@ -63,5 +71,13 @@ where
     B: Processor<INT, Output = BO>,
 {
     Pipe(from, into)
+}
+
+pub fn compose<A, B, AO, INT, BI>(from: A, into: B) -> Compose<A, B>
+where
+    A: Processor<INT, Output = AO>,
+    B: Processor<BI, Output = INT>,
+{
+    pipe(into, from)
 }
 
