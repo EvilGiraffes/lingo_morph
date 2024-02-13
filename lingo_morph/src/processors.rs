@@ -52,12 +52,12 @@ pub trait Processor<I>: Sized {
     {
         other.left_or(self)
     }
-    fn fold<F, S, T>(self, state: F) -> Fold<Self, F>
+    fn scan<F, S, T>(self, state: F) -> Scan<Self, F>
     where
         Self: Processor<(S, T)>,
         F: Fn() -> S,
     {
-        Fold::new(self, state)
+        Scan::new(self, state)
     }
 }
 
@@ -79,12 +79,12 @@ where
     }
 }
 
-pub struct Fold<P, F> {
+pub struct Scan<P, F> {
     processors: Vec<P>,
     get_state: F,
 }
 
-impl<P, F> Fold<P, F> {
+impl<P, F> Scan<P, F> {
     fn new(inital: P, get_state: F) -> Self {
         Self {
             processors: vec![inital],
@@ -97,7 +97,7 @@ impl<P, F> Fold<P, F> {
     }
 }
 
-impl<P, F, S, I, O> Processor<I> for Fold<P, F>
+impl<P, F, S, I, O> Processor<I> for Scan<P, F>
 where
     P: Processor<(S, I), Output = O>,
     F: Fn() -> S,
@@ -122,12 +122,12 @@ where
     }
 }
 
-pub struct BFold<P, F, const N: usize> {
+pub struct Buff<P, F, const N: usize> {
     processors: [P;N],
     get_state: F,
 }
 
-impl<P, F, S, I, O, const N: usize> Processor<I> for BFold<P, F, N>
+impl<P, F, S, I, O, const N: usize> Processor<I> for Buff<P, F, N>
 where 
     O: Copy + Default,
     P: Processor<(S, I), Output = O>,
@@ -200,19 +200,19 @@ where
 }
 
 #[macro_export]
-macro_rules! bfold {
+macro_rules! buff {
     ($state:tt; $($processor: expr),+$(,)?) => {
         $crate::processors::bfold([$($processor),+], || $state)
     };
 }
 
-pub fn bfold<P, F, S, I, O, const N: usize>(processors: [P;N], state: F) -> BFold<P, F, N> 
+pub fn buff<P, F, S, I, O, const N: usize>(processors: [P;N], state: F) -> Buff<P, F, N> 
 where
     O: Copy + Default,
     P: Processor<(S, I), Output = O>,
     F: Fn() -> S,
 {
-    BFold {
+    Buff {
         processors,
         get_state: state,
     }
