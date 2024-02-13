@@ -125,6 +125,38 @@ where
     }
 }
 
+pub struct BFold<P, F, const N: usize> {
+    processors: [P;N],
+    get_state: F,
+}
+
+impl<P, F, S, I, O, const N: usize> Processor<I> for BFold<P, F, N>
+where 
+    O: Copy + Default,
+    P: Processor<(S, I), Output = O>,
+    F: Fn() -> S,
+{
+    type Output = [O;N];
+    fn process(&mut self, given: I) -> Processed<Self::Output, I> {
+        // TODO remove the duplication from previous version
+        let mut state = (self.get_state)();
+        let mut result = [<O as Default>::default();N];
+        let mut idx = 0;
+        let mut rest = given;
+        loop {
+            let (processed, (new_state, new_rest)) = self.processors[idx].process((state, rest));
+            state = new_state;
+            rest = new_rest;
+            result[idx] = processed;
+            idx += 1;
+            if idx >= self.processors.len() {
+                break;
+            }
+        }
+        (result, rest)
+    }
+}
+
 pub struct Pipe<A, B>(A, B);
 
 impl<A, B, I, AO, BO> Processor<I> for Pipe<A, B>
@@ -170,3 +202,21 @@ where
     }
 }
 
+#[macro_export]
+macro_rules! bfold {
+    ($state:tt; $($processor: expr),+$(,)?) => {
+        $crate::processors::bfold([$($processor),+], || $state)
+    };
+}
+
+pub fn bfold<P, F, S, I, O, const N: usize>(processors: [P;N], state: F) -> BFold<P, F, N> 
+where
+    O: Copy + Default,
+    P: Processor<(S, I), Output = O>,
+    F: Fn() -> S,
+{
+    BFold {
+        processors,
+        get_state: state,
+    }
+}
