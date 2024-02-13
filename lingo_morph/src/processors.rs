@@ -55,6 +55,13 @@ pub trait Processor<I>: Sized {
     {
         other.left_or(self)
     }
+    fn fold<F, S, T>(self, state: F) -> Fold<Self, F>
+    where
+        Self: Processor<(S, T)>,
+        F: Fn() -> S,
+    {
+        Fold::new(self, state)
+    }
 }
 
 pub struct Map<P, F> {
@@ -72,6 +79,49 @@ where
         let (processed, rest) = self.processor.process(given);
         let mapped = (self.map)(processed);
         (mapped, rest)
+    }
+}
+
+pub struct Fold<P, F> {
+    processors: Vec<P>,
+    get_state: F,
+}
+
+impl<P, F> Fold<P, F> {
+    fn new(inital: P, get_state: F) -> Self {
+        Self {
+            processors: vec![inital],
+            get_state,
+        }
+    }
+    pub fn push(mut self, processor: P) -> Self {
+        self.processors.push(processor);
+        self
+    }
+}
+
+impl<P, F, S, I, O> Processor<I> for Fold<P, F>
+where
+    P: Processor<(S, I), Output = O>,
+    F: Fn() -> S,
+{
+    type Output = Vec<O>;
+    fn process(&mut self, given: I) -> Processed<Self::Output, I> {
+        let mut state = (self.get_state)();
+        let mut result = Vec::new();
+        let mut idx = 0;
+        let mut rest = given;
+        loop {
+            let (processed, (new_state, new_rest)) = self.processors[idx].process((state, rest));
+            state = new_state;
+            rest = new_rest;
+            result.push(processed);
+            idx += 1;
+            if idx >= self.processors.len() {
+                break;
+            }
+        }
+        (result, rest)
     }
 }
 
