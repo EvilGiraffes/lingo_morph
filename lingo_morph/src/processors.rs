@@ -7,16 +7,13 @@ pub trait Processor<I>: Sized {
     fn process(&mut self, given: I) -> Processed<Self::Output, I>;
     fn map<F, R>(self, map: F) -> Map<Self, F>
     where
-        F: FnMut(Self::Output) -> R
+        F: FnMut(Self::Output) -> R,
     {
         Map {
             processor: self,
             map,
         }
     }
-    // TODO: filter
-    //       bind
-    //       swap
     fn pipe<P, PO>(self, other: P) -> Pipe<Self, P>
     where
         P: Processor<I, Output = PO>,
