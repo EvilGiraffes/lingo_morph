@@ -2,11 +2,12 @@ pub type Processed<O, R> = (O, R);
 pub type Compose<A, B> = Pipe<B, A>;
 pub type RightIgnore<L, R> = LeftIgnore<R, L>;
 
-pub trait Processor<I>: Sized {
+pub trait Processor<I> {
     type Output;
     fn process(&mut self, given: I) -> Processed<Self::Output, I>;
     fn map<F, R>(self, map: F) -> Map<Self, F>
     where
+        Self: Sized,
         F: FnMut(Self::Output) -> R,
     {
         Map {
@@ -16,38 +17,42 @@ pub trait Processor<I>: Sized {
     }
     fn pipe<P, PO>(self, other: P) -> Pipe<Self, P>
     where
+        Self: Sized,
         P: Processor<I, Output = PO>,
     {
         Pipe(self, other)
     }
     fn compose<P, PO>(self, other: P) -> Compose<Self, P>
     where
+        Self: Sized,
         P: Processor<I, Output = PO>,
     {
         other.pipe(self)
     }
     fn left_ignore<P, PO>(self, other: P) -> LeftIgnore<Self, P>
     where
+        Self: Sized,
         P: Processor<I, Output = PO>,
     {
         LeftIgnore(self, other)
     }
     fn right_ignore<P, PO>(self, other: P) -> RightIgnore<Self, P>
     where
+        Self: Sized,
         P: Processor<I, Output = PO>,
     {
         other.left_ignore(self)
     }
     fn left_or<P, O>(self, other: P) -> Or<Self, P>
     where
-        Self: Processor<I, Output = Option<O>>,
+        Self: Sized + Processor<I, Output = Option<O>>,
         P: Processor<I, Output = O>,
     {
         Or(self, other)
     }
     fn right_or<P, O>(self, other: P) -> Or<P, Self>
     where
-        Self: Processor<I, Output = O>,
+        Self: Sized + Processor<I, Output = O>,
         P: Processor<I, Output = Option<O>>,
     {
         other.left_or(self)
