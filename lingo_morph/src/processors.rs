@@ -15,6 +15,14 @@ pub trait Processor<I> {
             map,
         }
     }
+    fn bind<F, P, PI, PO>(self, binder: F) -> P
+    where
+        Self: Sized,
+        F: FnOnce(Self) -> P,
+        P: Processor<PI, Output = PO>,
+    {
+        binder(self)
+    }
     fn pipe<P, PO>(self, other: P) -> Pipe<Self, P>
     where
         Self: Sized,
