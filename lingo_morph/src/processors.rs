@@ -65,8 +65,11 @@ pub trait Processor<I> {
     {
         other.left_or(self)
     }
+    fn chain(self) -> Chain<Self>
     where
+        Self: Sized,
     {
+        Chain(vec![self])
     }
 }
 
@@ -90,41 +93,33 @@ where
 
 }
 
+pub struct Chain<P>(Vec<P>);
+
+impl<P> Chain<P> {
+    pub fn chain(mut self, next: P) -> Self {
+        self.push(next);
         self
+    }
+    pub fn push(&mut self, next: P) {
+        self.0.push(next);
     }
 }
 
+pub struct Buff<P, const N: usize>([P; N]);
+
+impl<P, const N: usize> Buff<P, N> {
+    impl_fold!(self.0, P => [P; N]);
 }
 
-pub struct Buff<P, F, const N: usize> {
-    processors: [P;N],
-    get_state: F,
 }
 
-impl<P, F, S, I, O, const N: usize> Processor<I> for Buff<P, F, N>
-where 
-    O: Copy + Default,
-    P: Processor<(S, I), Output = O>,
-    F: Fn() -> S,
 {
-    type Output = [O;N];
     fn process(&mut self, given: I) -> Processed<Self::Output, I> {
-        // TODO remove the duplication from previous version
-        let mut state = (self.get_state)();
-        let mut result = [<O as Default>::default();N];
-        let mut idx = 0;
         let mut rest = given;
         loop {
-            let (processed, (new_state, new_rest)) = self.processors[idx].process((state, rest));
-            state = new_state;
             rest = new_rest;
-            result[idx] = processed;
-            idx += 1;
-            if idx >= self.processors.len() {
-                break;
             }
         }
-        (result, rest)
     }
 }
 
@@ -175,19 +170,14 @@ where
 
 #[macro_export]
 macro_rules! buff {
-    ($state:tt; $($processor: expr),+$(,)?) => {
+    ($($processor: expr),+$(,)?) => {
         $crate::processors::bfold([$($processor),+], || $state)
     };
 }
 
-pub fn buff<P, F, S, I, O, const N: usize>(processors: [P;N], state: F) -> Buff<P, F, N> 
+pub fn buff<P, I, O, const N: usize>(processors: [P; N]) -> Buff<P, N>
 where
-    O: Copy + Default,
-    P: Processor<(S, I), Output = O>,
-    F: Fn() -> S,
+    P: Processor<I, Output = O>,
 {
-    Buff {
-        processors,
-        get_state: state,
-    }
+    Buff(processors)
 }
