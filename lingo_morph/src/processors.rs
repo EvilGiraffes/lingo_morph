@@ -91,6 +91,21 @@ where
     }
 }
 
+macro_rules! impl_fold {
+    (self.$item:tt, $processor:ty => $type:ty) => {
+        pub fn fold<F, A, S, I, O>(self, state: A, fold: F) -> Fold<F, A, $type>
+        where
+            F: FnMut(S, O) -> Option<S>,
+            A: Fn() -> S,
+            $processor: Processor<I, Output = O>,
+        {
+            Fold {
+                fold,
+                state,
+                processors: self.$item,
+            }
+        }
+    };
 }
 
 pub struct Chain<P>(Vec<P>);
@@ -103,6 +118,7 @@ impl<P> Chain<P> {
     pub fn push(&mut self, next: P) {
         self.0.push(next);
     }
+    impl_fold!(self.0, P => Vec<P>);
 }
 
 pub struct Buff<P, const N: usize>([P; N]);
@@ -111,15 +127,41 @@ impl<P, const N: usize> Buff<P, N> {
     impl_fold!(self.0, P => [P; N]);
 }
 
+pub struct Fold<F, A, E> {
+    fold: F,
+    state: A,
+    processors: E,
 }
 
+impl<F, A, P, S, E, I, O> Processor<I> for Fold<F, A, E>
+where
+    F: FnMut(S, O) -> Option<S>,
+    A: Fn() -> S,
+    P: Processor<I, Output = O>,
+    E: Iterator<Item = P>,
 {
+    type Output = Option<S>;
     fn process(&mut self, given: I) -> Processed<Self::Output, I> {
+        let mut processor = match self.processors.next() {
+            Some(first) => first,
+            None => return (None, given),
+        };
+        let mut state = Some((self.state)());
         let mut rest = given;
         loop {
+            let current_state = match state {
+                Some(inner) => inner,
+                None => break,
+            };
+            let (output, new_rest) = processor.process(rest);
             rest = new_rest;
+            state = (self.fold)(current_state, output);
+            match self.processors.next() {
+                Some(next) => processor = next,
+                None => break,
             }
         }
+        (state, rest)
     }
 }
 
