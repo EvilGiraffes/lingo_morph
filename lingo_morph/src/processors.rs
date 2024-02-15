@@ -1,3 +1,5 @@
+use std::{vec, array};
+
 pub type Processed<O, R> = (O, R);
 pub type RightIgnore<L, R> = LeftIgnore<R, L>;
 
@@ -101,7 +103,7 @@ macro_rules! impl_fold {
             Fold {
                 fold,
                 state,
-                processors: self.$item,
+                processors: self.$item.into_iter(),
             }
         }
     };
@@ -117,13 +119,13 @@ impl<P> Chain<P> {
     pub fn push(&mut self, next: P) {
         self.0.push(next);
     }
-    impl_fold!(self.0, P => Vec<P>);
+    impl_fold!(self.0, P => vec::IntoIter<P>);
 }
 
 pub struct Buff<P, const N: usize>([P; N]);
 
 impl<P, const N: usize> Buff<P, N> {
-    impl_fold!(self.0, P => [P; N]);
+    impl_fold!(self.0, P => array::IntoIter<P, N>);
 }
 
 pub struct Fold<F, A, E> {
@@ -212,7 +214,7 @@ where
 #[macro_export]
 macro_rules! buff {
     ($($processor: expr),+$(,)?) => {
-        $crate::processors::bfold([$($processor),+], || $state)
+        $crate::processors::buff([$($processor),+])
     };
 }
 
