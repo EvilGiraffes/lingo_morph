@@ -1,5 +1,4 @@
 pub type Processed<O, R> = (O, R);
-pub type Compose<A, B> = Pipe<B, A>;
 pub type RightIgnore<L, R> = LeftIgnore<R, L>;
 
 pub trait Processor<I> {
@@ -15,7 +14,7 @@ pub trait Processor<I> {
             map,
         }
     }
-    fn bind<F, P, PI, PO>(self, binder: F) -> P
+    fn connect<F, P, PI, PO>(self, binder: F) -> P
     where
         Self: Sized,
         F: FnOnce(Self) -> P,
@@ -23,19 +22,19 @@ pub trait Processor<I> {
     {
         binder(self)
     }
-    fn pipe<P, PO>(self, other: P) -> Pipe<Self, P>
+    fn left_zip<P, PO>(self, other: P) -> Zip<Self, P>
     where
         Self: Sized,
         P: Processor<I, Output = PO>,
     {
-        Pipe(self, other)
+        Zip(self, other)
     }
-    fn compose<P, PO>(self, other: P) -> Compose<Self, P>
+    fn right_zip<P, PO>(self, other: P) -> Zip<P, Self>
     where
         Self: Sized,
         P: Processor<I, Output = PO>,
     {
-        other.pipe(self)
+        other.left_zip(self)
     }
     fn left_ignore<P, PO>(self, other: P) -> LeftIgnore<Self, P>
     where
@@ -65,7 +64,7 @@ pub trait Processor<I> {
     {
         other.left_or(self)
     }
-    fn chain(self) -> Chain<Self>
+    fn start_chain(self) -> Chain<Self>
     where
         Self: Sized,
     {
@@ -165,9 +164,9 @@ where
     }
 }
 
-pub struct Pipe<A, B>(A, B);
+pub struct Zip<A, B>(A, B);
 
-impl<A, B, I, AO, BO> Processor<I> for Pipe<A, B>
+impl<A, B, I, AO, BO> Processor<I> for Zip<A, B>
 where
     A: Processor<I, Output = AO>,
     B: Processor<I, Output = BO>,
