@@ -212,6 +212,20 @@ where
 }
 
 #[macro_export]
+macro_rules! chain {
+    ($($processors:tt),*$(,)?) => {
+        $crate::processors::chain(vec![$($processors),*])
+    };
+}
+
+pub fn chain<P, I, O>(processors: Vec<P>) -> Chain<P>
+where
+    P: Processor<I, Output = O>,
+{
+    Chain(processors)
+}
+
+#[macro_export]
 macro_rules! buff {
     ($($processor: expr),+$(,)?) => {
         $crate::processors::buff([$($processor),+])
