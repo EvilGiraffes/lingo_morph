@@ -3,6 +3,28 @@ use std::{vec, array};
 pub type Processed<O, R> = (O, R);
 pub type RightIgnore<L, R> = LeftIgnore<R, L>;
 
+#[macro_export]
+macro_rules! is {
+    (Some($expr:expr) ? -> $ident:ident) => {
+        match $expr {
+            Some(value) => value,
+            None => return (None, $ident),
+        }
+    };
+    (Some($expr:expr) ? break) => {
+        match $expr {
+            Some(value) => value,
+            None => break,
+        }
+    };
+    (Ok($expr:expr) ? -> $ident:ident) => {
+        match $expr {
+            Ok(value) => value,
+            Err(error) => return (Err(error.into()), $ident),
+        }
+    };
+}
+
 pub trait Processor<I> {
     type Output;
     fn process(&mut self, given: I) -> Processed<Self::Output, I>;
@@ -143,24 +165,15 @@ where
 {
     type Output = Option<S>;
     fn process(&mut self, given: I) -> Processed<Self::Output, I> {
-        let mut processor = match self.processors.next() {
-            Some(first) => first,
-            None => return (None, given),
-        };
+        let mut processor = is!(Some(self.processors.next())? -> given);
         let mut state = Some((self.state)());
         let mut rest = given;
         loop {
-            let current_state = match state {
-                Some(inner) => inner,
-                None => break,
-            };
+            let current_state = is!(Some(state)? break);
             let (output, new_rest) = processor.process(rest);
             rest = new_rest;
             state = (self.fold)(current_state, output);
-            match self.processors.next() {
-                Some(next) => processor = next,
-                None => break,
-            }
+            processor = is!(Some(self.processors.next())? break);
         }
         (state, rest)
     }
