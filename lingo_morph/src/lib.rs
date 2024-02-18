@@ -1,4 +1,3 @@
-use std::{vec, array};
 
 pub mod processors;
 // This mimics the log crate to avoid checking for the feature available
@@ -119,21 +118,38 @@ where
     }
 }
 
-macro_rules! impl_fold {
-    (self.$item:tt, $processor:ty => $type:ty) => {
-        pub fn fold<F, A, S, I, O>(self, state: A, fold: F) -> Fold<F, A, $type>
+macro_rules! do_fold {
+    (impl for $ident:ident $(: $const_ident:ident: $type:ty)?) => {
+        impl<F, A, P, S, I, O $(, const $const_ident: $type)?> Processor<I> 
+        for $ident<F, A, P $(, $const_ident)?>
+        where
+            F: FnMut(S, O) -> Option<S>,
+            A: Fn() -> S,
+            P: Processor<I, Output = O>,
+        {
+            type Output = Option<S>;
+            fn process(&mut self, given: I) -> Processed<Self::Output, I> {
+                let initial_state = (self.state)();
+                let iter = self.processors.iter_mut();
+                fold(initial_state, given, &mut self.fold, iter)
+            }
+        }
+    };
+    (self.$item:tt, $processor:ty => $ident:ident $(: $N:ty)?) => {
+        pub fn fold<F, A, S, I, O>(self, state: A, fold: F)
+            -> $ident<F, A, $processor $(, $N)?>
         where
             F: FnMut(S, O) -> Option<S>,
             A: Fn() -> S,
             $processor: Processor<I, Output = O>,
         {
-            Fold {
+            $ident {
                 fold,
                 state,
-                processors: self.$item.into_iter(),
+                processors: self.$item,
             }
         }
-    };
+    }
 }
 
 pub struct Chain<P>(Vec<P>);
@@ -146,43 +162,31 @@ impl<P> Chain<P> {
     pub fn push(&mut self, next: P) {
         self.0.push(next);
     }
-    impl_fold!(self.0, P => vec::IntoIter<P>);
+    do_fold!(self.0, P => VecFold);
 }
+
+// fap
+pub struct VecFold<F, A, P> {
+    fold: F,
+    state: A,
+    processors: Vec<P>,
+}
+
+do_fold!(impl for VecFold);
 
 pub struct Buff<P, const N: usize>([P; N]);
 
 impl<P, const N: usize> Buff<P, N> {
-    impl_fold!(self.0, P => array::IntoIter<P, N>);
+    do_fold!(self.0, P => BuffFold: N);
 }
 
-pub struct Fold<F, A, E> {
+pub struct BuffFold<F, A, P, const N: usize> {
     fold: F,
     state: A,
-    processors: E,
+    processors: [P; N],
 }
 
-impl<F, A, P, S, E, I, O> Processor<I> for Fold<F, A, E>
-where
-    F: FnMut(S, O) -> Option<S>,
-    A: Fn() -> S,
-    P: Processor<I, Output = O>,
-    E: Iterator<Item = P>,
-{
-    type Output = Option<S>;
-    fn process(&mut self, given: I) -> Processed<Self::Output, I> {
-        let mut processor = is!(Some(self.processors.next())? -> given);
-        let mut state = Some((self.state)());
-        let mut rest = given;
-        loop {
-            let current_state = is!(Some(state)? break);
-            let (output, new_rest) = processor.process(rest);
-            rest = new_rest;
-            state = (self.fold)(current_state, output);
-            processor = is!(Some(self.processors.next())? break);
-        }
-        (state, rest)
-    }
-}
+do_fold!(impl for BuffFold : N: usize);
 
 pub struct Zip<A, B>(A, B);
 
@@ -255,5 +259,24 @@ where
     P: Processor<I, Output = O>,
 {
     Buff(processors)
+}
+
+fn fold<'a, F, S, P, I, O, E>(initial_state: S, given: I, func: &'a mut F, mut iter: E) -> (Option<S>, I)
+where
+    F: FnMut(S, O) -> Option<S>,
+    P: Processor<I, Output = O> + 'a,
+    E: Iterator<Item = &'a mut P>,
+{
+    let mut processor = is!(Some(iter.next())? -> given);
+    let mut rest = given;
+    let mut state = Some(initial_state);
+    loop {
+        let current_state = is!(Some(state)? break);
+        let (output, new_rest) = processor.process(rest);
+        rest = new_rest;
+        state = func(current_state, output);
+        processor = is!(Some(iter.next())? break);
+    }
+    (state, rest)
 }
 
