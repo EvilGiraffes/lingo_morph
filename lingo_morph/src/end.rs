@@ -1,5 +1,13 @@
 use super::Processor;
 
+pub enum FResult<O, E> {
+    Done(O),
+    Incomplete,
+    Internal(E),
+}
+
+// TODO implement FResult on this
+//      implement from PResult
 pub type Final<O> = O;
 
 pub trait FinalProcessor<I> {

@@ -11,11 +11,25 @@ pub mod end;
 #[macro_use]
 mod log;
 
+pub enum PResult<O, R, E> {
+    Done(O, R),
+    Incomplete(R),
+    Internal(E, R),
+}
+
+// TODO incomperate PResult to processed
 pub type Processed<O, R> = (O, R);
 pub type RightIgnore<L, R> = LeftIgnore<R, L>;
 
 #[macro_export]
 macro_rules! is {
+    (Done($expr:expr)) => {
+        match $expr {
+            PResult::Done(output, rest) => (output, rest),
+            PResult::Incomplete(rest) => return $crate::PResult::Incomplete(rest),
+            PResult::Internal(error, rest) => return $crate::PResult::Internal(error.into(), rest),
+        }
+    };
     (Some($expr:expr) ? -> $ident:ident) => {
         match $expr {
             Some(value) => value,
@@ -175,3 +189,4 @@ where
         }
     }
 }
+
