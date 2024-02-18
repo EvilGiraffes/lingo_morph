@@ -1,12 +1,12 @@
 pub use collections::{buff, chain};
-pub use end::{FinalProcessor, FResult};
+pub use end::{FResult, FinalProcessor};
 
 use collections::Chain;
 use end::End;
 
 pub mod collections;
-pub mod processors;
 pub mod end;
+pub mod processors;
 
 // This mimics the log crate to avoid checking for the feature available
 #[macro_use]
@@ -190,4 +190,3 @@ where
         }
     }
 }
-

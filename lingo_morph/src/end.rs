@@ -14,7 +14,7 @@ pub trait FinalProcessor<I> {
     type Output;
     fn process(&mut self, given: I) -> Final<Self::Output>;
     fn conform<F, T>(self, conform: F) -> Conform<F, Self>
-    where 
+    where
         Self: Sized,
         F: FnMut(T) -> I,
     {
