@@ -1,8 +1,8 @@
-pub use collections::{chain, buff};
 use collections::Chain;
+pub use collections::{buff, chain};
 
-pub mod processors;
 pub mod collections;
+pub mod processors;
 // This mimics the log crate to avoid checking for the feature available
 #[macro_use]
 mod log;
@@ -165,5 +165,3 @@ where
         }
     }
 }
-
-

@@ -25,7 +25,6 @@ macro_rules! info {
     }};
 }
 
-
 macro_rules! warn {
     ($($args:tt)+) => {{
         if cfg!(feature = "logging") {
@@ -33,7 +32,6 @@ macro_rules! warn {
         }
     }};
 }
-
 
 macro_rules! error {
     ($($args:tt)+) => {{
@@ -43,7 +41,6 @@ macro_rules! error {
     }};
 }
 
-
 macro_rules! log_enabled {
     ($($args:tt)+) => {{
         if cfg!(feature = "logging") {
@@ -51,4 +48,3 @@ macro_rules! log_enabled {
         }
     }};
 }
-

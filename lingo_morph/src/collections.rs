@@ -1,8 +1,8 @@
-use super::{Processed, Processor, is};
+use super::{is, Processed, Processor};
 
 macro_rules! do_fold {
     (impl for $ident:ident $(: $const_ident:ident: $type:ty)?) => {
-        impl<F, A, P, S, I, O $(, const $const_ident: $type)?> Processor<I> 
+        impl<F, A, P, S, I, O $(, const $const_ident: $type)?> Processor<I>
         for $ident<F, A, P $(, $const_ident)?>
         where
             F: FnMut(S, O) -> Option<S>,
@@ -101,7 +101,12 @@ where
     Buff(processors)
 }
 
-fn fold<'a, F, S, P, I, O, E>(initial_state: S, given: I, func: &'a mut F, mut iter: E) -> (Option<S>, I)
+fn fold<'a, F, S, P, I, O, E>(
+    initial_state: S,
+    given: I,
+    func: &'a mut F,
+    mut iter: E,
+) -> (Option<S>, I)
 where
     F: FnMut(S, O) -> Option<S>,
     P: Processor<I, Output = O> + 'a,
