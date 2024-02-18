@@ -1,8 +1,12 @@
-use collections::Chain;
 pub use collections::{buff, chain};
+pub use end::FinalProcessor;
+
+use collections::Chain;
+use end::End;
 
 pub mod collections;
 pub mod processors;
+pub mod end;
 // This mimics the log crate to avoid checking for the feature available
 #[macro_use]
 mod log;
@@ -100,6 +104,12 @@ pub trait Processor<I> {
         Self: Sized,
     {
         Chain::new(vec![self])
+    }
+    fn end(self) -> End<Self>
+    where
+        Self: Sized,
+    {
+        End::new(self)
     }
 }
 
