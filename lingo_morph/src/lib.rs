@@ -1,9 +1,10 @@
-use std::error::Error;
+use std::{
+    error::Error,
+    fmt::{Debug, Display},
+};
 
-pub use collections::{buff, chain};
 pub use end::{FResult, FinalProcessor};
 
-use collections::Chain;
 use end::End;
 use source::Source;
 
@@ -16,43 +17,72 @@ pub mod source;
 #[macro_use]
 mod log;
 
-pub type PResult<I, R> = Result<Status<I, R>, Box<dyn Error>>;
-// TODO incomperate PResult to processed
-pub type Processed<O, R> = (O, R);
+pub type PResult<I, R> = Result<Status<I, R>, ProcessingError>;
+pub type Processed<O, R> = PResult<O, R>;
 pub type RightIgnore<L, R> = LeftIgnore<R, L>;
 
-#[macro_export]
-macro_rules! is {
-    (Done($expr:expr)) => {
-        match $expr {
-            PResult::Done(output, rest) => (output, rest),
-            PResult::Incomplete(rest) => return $crate::PResult::Incomplete(rest),
-            PResult::Internal(error, rest) => return $crate::PResult::Internal(error.into(), rest),
-        }
-    };
-    (Some($expr:expr) ? -> $ident:ident) => {
-        match $expr {
-            Some(value) => value,
-            None => return (None, $ident),
-        }
-    };
-    (Some($expr:expr) ? break) => {
-        match $expr {
-            Some(value) => value,
-            None => break,
-        }
-    };
-    (Ok($expr:expr) ? -> $ident:ident) => {
-        match $expr {
-            Ok(value) => value,
-            Err(error) => return (Err(error.into()), $ident),
-        }
-    };
+#[derive(Debug)]
+pub struct ProcessingError {
+    line_number: usize,
+    column: usize,
+    at_bytes: usize,
+    error: Box<dyn Error>,
 }
+
+impl ProcessingError {
+    pub fn line_number(&self) -> usize {
+        self.line_number
+    }
+    pub fn column(&self) -> usize {
+        self.column
+    }
+    pub fn at_bytes(&self) -> usize {
+        self.at_bytes
+    }
+    pub fn error(&self) -> &dyn Error {
+        self.error.as_ref()
+    }
+}
+
+impl Display for ProcessingError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "processing failed at line {} and column {}, after parsing {} bytes: {}",
+            self.line_number,
+            self.column,
+            self.at_bytes,
+            self.error()
+        )
+    }
+}
+
+impl Error for ProcessingError {}
 
 pub enum Status<O, R> {
     Done(O, R),
     Mismatch(R),
+    EOF,
+}
+
+impl<O, R> Status<O, R> {
+    pub fn map<F, U>(self, mapper: F) -> Status<U, R>
+    where
+        F: FnOnce(O) -> U,
+    {
+        match self {
+            Self::Done(output, rest) => Status::Done(mapper(output), rest),
+            Self::Mismatch(rest) => Status::Mismatch(rest),
+            Self::EOF => Status::EOF,
+        }
+    }
+    pub fn extract_rest(self) -> Option<R> {
+        match self {
+            Self::Done(_, rest) => Some(rest),
+            Self::Mismatch(rest) => Some(rest),
+            Self::EOF => None,
+        }
+    }
 }
 
 pub trait Processor<I> {
@@ -120,12 +150,13 @@ pub trait Processor<I> {
     {
         other.left_or(self)
     }
-    fn start_chain(self) -> Chain<Self>
-    where
-        Self: Sized,
-    {
-        Chain::new(vec![self])
-    }
+    // TODO implement
+    // fn start_chain(self) -> Chain<Self>
+    // where
+    //     Self: Sized,
+    // {
+    //     Chain::new(vec![self])
+    // }
     fn end(self) -> End<Self>
     where
         Self: Sized,
@@ -149,9 +180,8 @@ where
     where
         S: Source<Item = I>,
     {
-        let (processed, rest) = self.processor.process(given);
-        let mapped = (self.map)(processed);
-        (mapped, rest)
+        let status = self.processor.process(given)?;
+        Ok(status.map(|inner| (self.map)(inner)))
     }
 }
 
@@ -167,9 +197,15 @@ where
     where
         S: Source<Item = I>,
     {
-        let (first, rest) = self.0.process(given);
-        let (second, rest) = self.1.process(rest);
-        ((first, second), rest)
+        let status = self.0.process(given)?;
+        match status {
+            Status::Done(first, rest) => {
+                let second = self.1.process(rest)?;
+                Ok(second.map(|inner| (first, inner)))
+            }
+            Status::Mismatch(rest) => Ok(Status::Mismatch(rest)),
+            Status::EOF => Ok(Status::EOF),
+        }
     }
 }
 
@@ -185,8 +221,10 @@ where
     where
         S: Source<Item = I>,
     {
-        let (_, rest) = self.0.process(given);
-        self.1.process(rest)
+        match self.0.process(given)?.extract_rest() {
+            Some(rest) => self.1.process(rest),
+            None => Ok(Status::EOF),
+        }
     }
 }
 
@@ -194,7 +232,7 @@ pub struct Or<A, B>(A, B);
 
 impl<A, B, I, O> Processor<I> for Or<A, B>
 where
-    A: Processor<I, Output = Option<O>>,
+    A: Processor<I, Output = O>,
     B: Processor<I, Output = O>,
 {
     type Output = O;
@@ -202,9 +240,11 @@ where
     where
         S: Source<Item = I>,
     {
-        match self.0.process(given) {
-            (Some(value), rest) => (value, rest),
-            (None, rest) => self.1.process(rest),
+        let status = self.0.process(given)?;
+        match status {
+            Status::Done(_, _) => Ok(status),
+            Status::Mismatch(rest) => self.1.process(rest),
+            Status::EOF => Ok(Status::EOF),
         }
     }
 }

@@ -1,12 +1,41 @@
-use std::error::Error;
-
-use crate::source::Source;
+use crate::{source::Source, PResult, ProcessingError, Status};
 
 use super::Processor;
 
-pub type FResult<I> = Result<I, Box<dyn Error>>;
+pub enum FResult<O> {
+    Done(O),
+    Incomplete,
+    Error(ProcessingError),
+}
 
-pub type Final<O> = O;
+impl<O> FResult<O> {
+    fn map<F, U>(self, mapper: F) -> FResult<U>
+    where
+        F: FnOnce(O) -> U,
+    {
+        match self {
+            Self::Done(output) => FResult::Done(mapper(output)),
+            Self::Incomplete => FResult::Incomplete,
+            Self::Error(error) => FResult::Error(error),
+        }
+    }
+}
+
+impl<O, R> From<PResult<O, R>> for FResult<O> {
+    fn from(value: PResult<O, R>) -> Self {
+        let flattened = match value {
+            Ok(status) => status,
+            Err(error) => return Self::Error(error),
+        };
+        match flattened {
+            Status::Done(output, _) => FResult::Done(output),
+            Status::Mismatch(_) => FResult::Incomplete,
+            Status::EOF => FResult::Incomplete,
+        }
+    }
+}
+
+pub type Final<O> = FResult<O>;
 
 pub trait FinalProcessor<I> {
     type Output;
@@ -42,8 +71,7 @@ where
 {
     type Output = O;
     fn process(&mut self, given: S) -> Final<Self::Output> {
-        let (output, _) = self.0.process(given);
-        output
+        self.0.process(given).into()
     }
 }
 
@@ -70,7 +98,6 @@ where
 {
     type Output = R;
     fn process(&mut self, given: I) -> Final<Self::Output> {
-        let output = self.1.process(given);
-        (self.0)(output)
+        self.1.process(given).map(|inner| (self.0)(inner))
     }
 }
