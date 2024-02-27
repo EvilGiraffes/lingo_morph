@@ -1,16 +1,21 @@
+use crate::source::Source;
+
 use super::{is, Processed, Processor};
 
 macro_rules! do_fold {
     (impl for $ident:ident $(: $const_ident:ident: $type:ty)?) => {
-        impl<F, A, P, S, I, O $(, const $const_ident: $type)?> Processor<I>
+        impl<F, A, P, ST, I, O $(, const $const_ident: $type)?> Processor<I>
         for $ident<F, A, P $(, $const_ident)?>
         where
-            F: FnMut(S, O) -> Option<S>,
-            A: Fn() -> S,
+            F: FnMut(ST, O) -> Option<ST>,
+            A: Fn() -> ST,
             P: Processor<I, Output = O>,
         {
-            type Output = Option<S>;
-            fn process(&mut self, given: I) -> Processed<Self::Output, I> {
+            type Output = Option<ST>;
+            fn process<S>(&mut self, given: S) -> Processed<Self::Output, S>
+            where
+                S: $crate::source::Source<Item = I>,
+            {
                 let initial_state = (self.state)();
                 let iter = self.processors.iter_mut();
                 fold(initial_state, given, &mut self.fold, iter)
@@ -101,15 +106,16 @@ where
     Buff(processors)
 }
 
-fn fold<'a, F, S, P, I, O, E>(
-    initial_state: S,
-    given: I,
+fn fold<'a, S, F, ST, P, I, O, E>(
+    initial_state: ST,
+    given: S,
     func: &'a mut F,
     mut iter: E,
-) -> (Option<S>, I)
+) -> (Option<ST>, S)
 where
-    F: FnMut(S, O) -> Option<S>,
+    F: FnMut(ST, O) -> Option<ST>,
     P: Processor<I, Output = O> + 'a,
+    S: Source<Item = I>,
     E: Iterator<Item = &'a mut P>,
 {
     let mut processor = is!(Some(iter.next())? -> given);

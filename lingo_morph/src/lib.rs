@@ -1,23 +1,22 @@
+use std::error::Error;
+
 pub use collections::{buff, chain};
 pub use end::{FResult, FinalProcessor};
 
 use collections::Chain;
 use end::End;
+use source::Source;
 
 pub mod collections;
 pub mod end;
 pub mod processors;
+pub mod source;
 
 // This mimics the log crate to avoid checking for the feature available
 #[macro_use]
 mod log;
 
-pub enum PResult<O, R, E> {
-    Done(O, R),
-    Incomplete(R),
-    Internal(E, R),
-}
-
+pub type PResult<I, R> = Result<Status<I, R>, Box<dyn Error>>;
 // TODO incomperate PResult to processed
 pub type Processed<O, R> = (O, R);
 pub type RightIgnore<L, R> = LeftIgnore<R, L>;
@@ -51,9 +50,16 @@ macro_rules! is {
     };
 }
 
+pub enum Status<O, R> {
+    Done(O, R),
+    Mismatch(R),
+}
+
 pub trait Processor<I> {
     type Output;
-    fn process(&mut self, given: I) -> Processed<Self::Output, I>;
+    fn process<S>(&mut self, given: S) -> Processed<Self::Output, S>
+    where
+        S: Source<Item = I>;
     fn map<F, R>(self, map: F) -> Map<Self, F>
     where
         Self: Sized,
@@ -139,7 +145,10 @@ where
     F: FnMut(O) -> R,
 {
     type Output = R;
-    fn process(&mut self, given: I) -> Processed<Self::Output, I> {
+    fn process<S>(&mut self, given: S) -> Processed<Self::Output, S>
+    where
+        S: Source<Item = I>,
+    {
         let (processed, rest) = self.processor.process(given);
         let mapped = (self.map)(processed);
         (mapped, rest)
@@ -154,7 +163,10 @@ where
     B: Processor<I, Output = BO>,
 {
     type Output = (AO, BO);
-    fn process(&mut self, given: I) -> Processed<Self::Output, I> {
+    fn process<S>(&mut self, given: S) -> Processed<Self::Output, S>
+    where
+        S: Source<Item = I>,
+    {
         let (first, rest) = self.0.process(given);
         let (second, rest) = self.1.process(rest);
         ((first, second), rest)
@@ -169,7 +181,10 @@ where
     R: Processor<I, Output = RO>,
 {
     type Output = RO;
-    fn process(&mut self, given: I) -> Processed<Self::Output, I> {
+    fn process<S>(&mut self, given: S) -> Processed<Self::Output, S>
+    where
+        S: Source<Item = I>,
+    {
         let (_, rest) = self.0.process(given);
         self.1.process(rest)
     }
@@ -183,7 +198,10 @@ where
     B: Processor<I, Output = O>,
 {
     type Output = O;
-    fn process(&mut self, given: I) -> Processed<Self::Output, I> {
+    fn process<S>(&mut self, given: S) -> Processed<Self::Output, S>
+    where
+        S: Source<Item = I>,
+    {
         match self.0.process(given) {
             (Some(value), rest) => (value, rest),
             (None, rest) => self.1.process(rest),

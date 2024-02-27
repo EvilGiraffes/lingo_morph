@@ -1,13 +1,11 @@
+use std::error::Error;
+
+use crate::source::Source;
+
 use super::Processor;
 
-pub enum FResult<O, E> {
-    Done(O),
-    Incomplete,
-    Internal(E),
-}
+pub type FResult<I> = Result<I, Box<dyn Error>>;
 
-// TODO implement FResult on this
-//      implement from PResult
 pub type Final<O> = O;
 
 pub trait FinalProcessor<I> {
@@ -37,12 +35,13 @@ impl<P> End<P> {
     }
 }
 
-impl<P, I, O> FinalProcessor<I> for End<P>
+impl<P, S, I, O> FinalProcessor<S> for End<P>
 where
     P: Processor<I, Output = O>,
+    S: Source<Item = I>,
 {
     type Output = O;
-    fn process(&mut self, given: I) -> Final<Self::Output> {
+    fn process(&mut self, given: S) -> Final<Self::Output> {
         let (output, _) = self.0.process(given);
         output
     }
