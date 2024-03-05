@@ -81,7 +81,8 @@ pub trait Processor<I> {
     type Output;
     fn process<S>(&mut self, given: S) -> Processed<Self::Output, S>
     where
-        S: Source<Item = I>;
+        S: Source<Item = I>,
+        S::RollBackErr: Error;
     fn map<F, R>(self, map: F) -> Map<Self, F>
     where
         Self: Sized,
@@ -171,6 +172,7 @@ where
     fn process<S>(&mut self, given: S) -> Processed<Self::Output, S>
     where
         S: Source<Item = I>,
+        S::RollBackErr: Error,
     {
         let status = self.processor.process(given)?;
         Ok(status.map(|inner| (self.map)(inner)))
@@ -188,6 +190,7 @@ where
     fn process<S>(&mut self, given: S) -> Processed<Self::Output, S>
     where
         S: Source<Item = I>,
+        S::RollBackErr: Error,
     {
         let status = self.0.process(given)?;
         match status {
@@ -212,6 +215,7 @@ where
     fn process<S>(&mut self, given: S) -> Processed<Self::Output, S>
     where
         S: Source<Item = I>,
+        S::RollBackErr: Error,
     {
         match self.0.process(given)? {
             Status::Done(_, rest) => self.1.process(rest),
@@ -232,6 +236,7 @@ where
     fn process<S>(&mut self, given: S) -> Processed<Self::Output, S>
     where
         S: Source<Item = I>,
+        S::RollBackErr: Error,
     {
         let status = self.0.process(given)?;
         match status {
