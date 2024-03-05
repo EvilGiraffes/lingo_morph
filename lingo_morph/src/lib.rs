@@ -93,6 +93,13 @@ pub trait Processor<I> {
             map,
         }
     }
+    fn replace<T>(self, with: T) -> CopyReplace<Self, T>
+    where
+        Self: Sized,
+        T: Copy,
+    {
+        CopyReplace(self, with)
+    }
     fn connect<F, P, PI, PO>(self, binder: F) -> P
     where
         Self: Sized,
@@ -176,6 +183,23 @@ where
     {
         let status = self.processor.process(given)?;
         Ok(status.map(|inner| (self.map)(inner)))
+    }
+}
+
+pub struct CopyReplace<P, T>(P, T);
+
+impl<P, I, T> Processor<I> for CopyReplace<P, T>
+where
+    P: Processor<I>,
+    T: Copy,
+{
+    type Output = T;
+    fn process<S>(&mut self, given: S) -> Processed<Self::Output, S>
+    where
+        S: Source<Item = I>,
+        S::RollBackErr: Error,
+    {
+        Ok(self.0.process(given)?.map(|_| self.1))
     }
 }
 
