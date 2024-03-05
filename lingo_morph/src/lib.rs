@@ -108,45 +108,45 @@ pub trait Processor<I> {
     {
         binder(self)
     }
-    fn left_zip<P, PO>(self, other: P) -> Zip<Self, P>
+    fn left_zip<P>(self, other: P) -> Zip<Self, P>
     where
         Self: Sized,
-        P: Processor<I, Output = PO>,
+        P: Processor<I>,
     {
         Zip(self, other)
     }
-    fn right_zip<P, PO>(self, other: P) -> Zip<P, Self>
+    fn right_zip<P>(self, other: P) -> Zip<P, Self>
     where
         Self: Sized,
-        P: Processor<I, Output = PO>,
+        P: Processor<I>,
     {
         other.left_zip(self)
     }
-    fn left_ignore<P, PO>(self, other: P) -> LeftIgnore<Self, P>
+    fn left_ignore<P>(self, other: P) -> LeftIgnore<Self, P>
     where
         Self: Sized,
-        P: Processor<I, Output = PO>,
+        P: Processor<I>,
     {
         LeftIgnore(self, other)
     }
-    fn right_ignore<P, PO>(self, other: P) -> RightIgnore<Self, P>
+    fn right_ignore<P>(self, other: P) -> RightIgnore<Self, P>
     where
         Self: Sized,
-        P: Processor<I, Output = PO>,
+        P: Processor<I>,
     {
         other.left_ignore(self)
     }
-    fn left_or<P, O>(self, other: P) -> Or<Self, P>
+    fn left_or<P>(self, other: P) -> Or<Self, P>
     where
-        Self: Sized + Processor<I, Output = Option<O>>,
-        P: Processor<I, Output = O>,
+        Self: Sized + Processor<I>,
+        P: Processor<I, Output = Self::Output>,
     {
         Or(self, other)
     }
-    fn right_or<P, O>(self, other: P) -> Or<P, Self>
+    fn right_or<P>(self, other: P) -> Or<P, Self>
     where
-        Self: Sized + Processor<I, Output = O>,
-        P: Processor<I, Output = Option<O>>,
+        Self: Sized + Processor<I>,
+        P: Processor<I, Output = Self::Output>,
     {
         other.left_or(self)
     }
@@ -187,12 +187,12 @@ where
 
 pub struct Zip<A, B>(A, B);
 
-impl<A, B, I, AO, BO> Processor<I> for Zip<A, B>
+impl<A, B, I> Processor<I> for Zip<A, B>
 where
-    A: Processor<I, Output = AO>,
-    B: Processor<I, Output = BO>,
+    A: Processor<I>,
+    B: Processor<I>,
 {
-    type Output = (AO, BO);
+    type Output = (A::Output, B::Output);
     fn process<S>(&mut self, given: S) -> Processed<Self::Output, S>
     where
         S: Source<Item = I>,
@@ -211,12 +211,12 @@ where
 
 pub struct LeftIgnore<L, R>(L, R);
 
-impl<L, R, I, LO, RO> Processor<I> for LeftIgnore<L, R>
+impl<L, R, I> Processor<I> for LeftIgnore<L, R>
 where
-    L: Processor<I, Output = LO>,
-    R: Processor<I, Output = RO>,
+    L: Processor<I>,
+    R: Processor<I>,
 {
-    type Output = RO;
+    type Output = R::Output;
     fn process<S>(&mut self, given: S) -> Processed<Self::Output, S>
     where
         S: Source<Item = I>,
