@@ -1,8 +1,37 @@
+#[derive(Debug, Default, Copy, Clone)]
+pub struct Location {
+    line: usize,
+    column: usize,
+    at_bytes: usize,
+}
+
+impl Location {
+    pub fn line(&self) -> usize {
+        self.line
+    }
+    pub fn line_mut(&mut self) -> &mut usize {
+        &mut self.line
+    }
+    pub fn column(&self) -> usize {
+        self.column
+    }
+    pub fn column_mut(&mut self) -> &mut usize {
+        &mut self.column
+    }
+    pub fn at_bytes(&self) -> usize {
+        self.at_bytes
+    }
+    pub fn at_bytes_mut(&mut self) -> &mut usize {
+        &mut self.at_bytes
+    }
+}
+
 pub trait Source: Iterator {
     type RollBackErr;
     fn roll_back(&mut self, by: usize) -> Result<(), Self::RollBackErr>;
     fn peek(&mut self) -> Option<&Self::Item>;
     fn peek_mut(&mut self) -> Option<&mut Self::Item>;
+    fn location(&self) -> Location;
     fn next_if<P>(&mut self, predicate: P) -> Option<Self::Item>
     where
         P: FnOnce(&Self::Item) -> bool,

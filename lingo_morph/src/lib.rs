@@ -6,7 +6,7 @@ use std::{
 pub use end::{FResult, FinalProcessor};
 
 use end::End;
-use source::Source;
+use source::{Location, Source};
 
 pub mod collections;
 pub mod end;
@@ -23,21 +23,20 @@ pub type RightIgnore<L, R> = LeftIgnore<R, L>;
 
 #[derive(Debug)]
 pub struct ProcessingError {
-    line_number: usize,
-    column: usize,
-    at_bytes: usize,
+    location: Location,
     error: Box<dyn Error>,
 }
 
 impl ProcessingError {
-    pub fn line_number(&self) -> usize {
-        self.line_number
-    }
-    pub fn column(&self) -> usize {
-        self.column
-    }
-    pub fn at_bytes(&self) -> usize {
-        self.at_bytes
+    pub fn from_source<S, E>(source: &S, error: E) -> Self
+    where
+        S: Source,
+        E: Error + 'static,
+    {
+        Self {
+            location: source.location(),
+            error: Box::new(error),
+        }
     }
     pub fn error(&self) -> &dyn Error {
         self.error.as_ref()
@@ -49,9 +48,9 @@ impl Display for ProcessingError {
         write!(
             f,
             "processing failed at line {} and column {}, after parsing {} bytes: {}",
-            self.line_number,
-            self.column,
-            self.at_bytes,
+            self.location.line(),
+            self.location.column(),
+            self.location.at_bytes(),
             self.error()
         )
     }
