@@ -76,13 +76,6 @@ impl<O, R> Status<O, R> {
             Self::EOF => Status::EOF,
         }
     }
-    pub fn extract_rest(self) -> Option<R> {
-        match self {
-            Self::Done(_, rest) => Some(rest),
-            Self::Mismatch(rest) => Some(rest),
-            Self::EOF => None,
-        }
-    }
 }
 
 pub trait Processor<I> {
@@ -221,9 +214,10 @@ where
     where
         S: Source<Item = I>,
     {
-        match self.0.process(given)?.extract_rest() {
-            Some(rest) => self.1.process(rest),
-            None => Ok(Status::EOF),
+        match self.0.process(given)? {
+            Status::Done(_, rest) => self.1.process(rest),
+            Status::Mismatch(rest) => Ok(Status::Mismatch(rest)),
+            Status::EOF => Ok(Status::EOF),
         }
     }
 }
