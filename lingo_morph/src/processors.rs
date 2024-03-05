@@ -9,7 +9,7 @@ impl Processor<char> for Char {
     fn process<S>(&mut self, mut given: S) -> Processed<Self::Output, S>
     where
         S: Source<Item = char>,
-        S::RollBackErr: Error,
+        S::RollBackErr: Error + 'static,
     {
         match given.next_if_eq(&self.0) {
             Some(next) => Ok(Status::Done(next, given)),
@@ -41,4 +41,3 @@ macro_rules! single_char_processor {
 single_char_processor!(u8, single_u8);
 single_char_processor!(u32, single_u32);
 single_char_processor!(u64, single_u64);
-

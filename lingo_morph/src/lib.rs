@@ -82,7 +82,7 @@ pub trait Processor<I> {
     fn process<S>(&mut self, given: S) -> Processed<Self::Output, S>
     where
         S: Source<Item = I>,
-        S::RollBackErr: Error;
+        S::RollBackErr: Error + 'static;
     fn map<F, R>(self, map: F) -> Map<Self, F>
     where
         Self: Sized,
@@ -179,7 +179,7 @@ where
     fn process<S>(&mut self, given: S) -> Processed<Self::Output, S>
     where
         S: Source<Item = I>,
-        S::RollBackErr: Error,
+        S::RollBackErr: Error + 'static,
     {
         let status = self.processor.process(given)?;
         Ok(status.map(|inner| (self.map)(inner)))
@@ -197,7 +197,7 @@ where
     fn process<S>(&mut self, given: S) -> Processed<Self::Output, S>
     where
         S: Source<Item = I>,
-        S::RollBackErr: Error,
+        S::RollBackErr: Error + 'static,
     {
         Ok(self.0.process(given)?.map(|_| self.1))
     }
@@ -214,7 +214,7 @@ where
     fn process<S>(&mut self, given: S) -> Processed<Self::Output, S>
     where
         S: Source<Item = I>,
-        S::RollBackErr: Error,
+        S::RollBackErr: Error + 'static,
     {
         let status = self.0.process(given)?;
         match status {
@@ -239,14 +239,10 @@ where
     fn process<S>(&mut self, given: S) -> Processed<Self::Output, S>
     where
         S: Source<Item = I>,
-        S::RollBackErr: Error,
+        S::RollBackErr: Error + 'static,
     {
         match self.0.process(given)? {
-            Status::Done(_, rest) => {
-                todo!(
-                    "This needs to be implemented properly, it has to roll back if next mismatches"
-                )
-            }
+            Status::Done(_, rest) => rollback_if_process_fail(1, &mut self.1, rest),
             Status::Mismatch(rest) => Ok(Status::Mismatch(rest)),
             Status::EOF => Ok(Status::EOF),
         }
@@ -264,7 +260,7 @@ where
     fn process<S>(&mut self, given: S) -> Processed<Self::Output, S>
     where
         S: Source<Item = I>,
-        S::RollBackErr: Error,
+        S::RollBackErr: Error + 'static,
     {
         let status = self.0.process(given)?;
         match status {
@@ -272,5 +268,25 @@ where
             Status::Mismatch(rest) => self.1.process(rest),
             Status::EOF => Ok(Status::EOF),
         }
+    }
+}
+
+fn rollback_if_process_fail<P, I, S>(
+    by: usize,
+    processor: &mut P,
+    given: S,
+) -> Processed<P::Output, S>
+where
+    P: Processor<I>,
+    S: Source<Item = I>,
+    S::RollBackErr: Error + 'static,
+{
+    match processor.process(given)? {
+        Status::Done(output, rest) => Ok(Status::Done(output, rest)),
+        Status::Mismatch(mut rest) => match rest.roll_back(by) {
+            Ok(_) => Ok(Status::Mismatch(rest)),
+            Err(error) => Err(ProcessingError::from_source(&rest, error)),
+        },
+        Status::EOF => Ok(Status::EOF),
     }
 }

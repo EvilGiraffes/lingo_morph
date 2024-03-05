@@ -70,7 +70,7 @@ impl<P, S, I, O> FinalProcessor<S> for End<P>
 where
     P: Processor<I, Output = O>,
     S: Source<Item = I>,
-    S::RollBackErr: Error,
+    S::RollBackErr: Error + 'static,
 {
     type Output = O;
     fn process(&mut self, given: S) -> Final<Self::Output> {
