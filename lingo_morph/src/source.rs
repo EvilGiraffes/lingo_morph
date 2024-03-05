@@ -14,4 +14,10 @@ pub trait Source: Iterator {
             None
         }
     }
+    fn next_if_eq<T>(&mut self, other: &T) -> Option<Self::Item>
+    where
+        <Self as Iterator>::Item: PartialEq<T>,
+    {
+        self.next_if(|next| next == other)
+    }
 }
