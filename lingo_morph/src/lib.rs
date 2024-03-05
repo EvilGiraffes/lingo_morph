@@ -218,7 +218,11 @@ where
         S::RollBackErr: Error,
     {
         match self.0.process(given)? {
-            Status::Done(_, rest) => self.1.process(rest),
+            Status::Done(_, rest) => {
+                todo!(
+                    "This needs to be implemented properly, it has to roll back if next mismatches"
+                )
+            }
             Status::Mismatch(rest) => Ok(Status::Mismatch(rest)),
             Status::EOF => Ok(Status::EOF),
         }
