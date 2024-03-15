@@ -236,8 +236,9 @@ where
     where
         S: Source<Item = I>,
     {
+        let fallback = given.location();
         match self.0.process(given)? {
-            Status::Done(_, rest) => rollback_if_process_fail(1, &mut self.1, rest),
+            Status::Done(_, rest) => rollback_if_process_fail(fallback, &mut self.1, rest),
             Status::Mismatch(rest) => Ok(Status::Mismatch(rest)),
             Status::EOF => Ok(Status::EOF),
         }
@@ -266,7 +267,7 @@ where
 }
 
 fn rollback_if_process_fail<P, I, S>(
-    by: usize,
+    fallback: Location,
     processor: &mut P,
     given: S,
 ) -> Processed<P::Output, S>
@@ -276,7 +277,7 @@ where
 {
     match processor.process(given)? {
         Status::Done(output, rest) => Ok(Status::Done(output, rest)),
-        Status::Mismatch(mut rest) => match rest.roll_back(by) {
+        Status::Mismatch(mut rest) => match rest.roll_back(fallback) {
             Ok(_) => Ok(Status::Mismatch(rest)),
             Err(error) => Err(ProcessingError::from_source(&rest, error)),
         },
