@@ -81,8 +81,7 @@ pub trait Processor<I> {
     type Output;
     fn process<S>(&mut self, given: S) -> Processed<Self::Output, S>
     where
-        S: Source<Item = I>,
-        S::RollBackErr: Error + 'static;
+        S: Source<Item = I>;
     fn map<F, R>(self, map: F) -> Map<Self, F>
     where
         Self: Sized,
@@ -179,7 +178,6 @@ where
     fn process<S>(&mut self, given: S) -> Processed<Self::Output, S>
     where
         S: Source<Item = I>,
-        S::RollBackErr: Error + 'static,
     {
         let status = self.processor.process(given)?;
         Ok(status.map(|inner| (self.map)(inner)))
@@ -197,7 +195,6 @@ where
     fn process<S>(&mut self, given: S) -> Processed<Self::Output, S>
     where
         S: Source<Item = I>,
-        S::RollBackErr: Error + 'static,
     {
         Ok(self.0.process(given)?.map(|_| self.1))
     }
@@ -214,7 +211,6 @@ where
     fn process<S>(&mut self, given: S) -> Processed<Self::Output, S>
     where
         S: Source<Item = I>,
-        S::RollBackErr: Error + 'static,
     {
         let status = self.0.process(given)?;
         match status {
@@ -239,7 +235,6 @@ where
     fn process<S>(&mut self, given: S) -> Processed<Self::Output, S>
     where
         S: Source<Item = I>,
-        S::RollBackErr: Error + 'static,
     {
         match self.0.process(given)? {
             Status::Done(_, rest) => rollback_if_process_fail(1, &mut self.1, rest),
@@ -260,7 +255,6 @@ where
     fn process<S>(&mut self, given: S) -> Processed<Self::Output, S>
     where
         S: Source<Item = I>,
-        S::RollBackErr: Error + 'static,
     {
         let status = self.0.process(given)?;
         match status {
@@ -279,7 +273,6 @@ fn rollback_if_process_fail<P, I, S>(
 where
     P: Processor<I>,
     S: Source<Item = I>,
-    S::RollBackErr: Error + 'static,
 {
     match processor.process(given)? {
         Status::Done(output, rest) => Ok(Status::Done(output, rest)),

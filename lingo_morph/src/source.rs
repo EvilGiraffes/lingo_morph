@@ -27,8 +27,8 @@ impl Location {
 }
 
 pub trait Source: Iterator {
-    type RollBackErr;
     fn roll_back(&mut self, by: usize) -> Result<(), Self::RollBackErr>;
+    type RollBackErr: Error + 'static;
     fn peek(&mut self) -> Option<&Self::Item>;
     fn peek_mut(&mut self) -> Option<&mut Self::Item>;
     fn location(&self) -> Location;
