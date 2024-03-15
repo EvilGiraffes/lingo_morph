@@ -2,6 +2,7 @@ use std::error::Error;
 
 use crate::{source::Source, Processed, Processor, Status};
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Char(char);
 
 impl Processor<char> for Char {
