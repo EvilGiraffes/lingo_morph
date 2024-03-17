@@ -20,7 +20,7 @@ pub fn char(from: char) -> Char {
     Char(from)
 }
 
-pub fn digit(digit: u8) -> Option<impl Processor<char>> {
+pub fn digit(digit: u8) -> Option<impl Processor<char, Output = u8>> {
     match digit {
         0 => Some(Char('0').replace(0)),
         1 => Some(Char('1').replace(1)),
