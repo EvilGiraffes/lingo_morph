@@ -88,7 +88,9 @@ pub trait Processor<I> {
     where
         Self: Sized,
     {
-        let ptr = NonNull::new(self).unwrap_or_else(|| unreachable!("Self does not exist"));
+        let ptr = NonNull::new(self).expect("Self cannot be a null reference");
+        Ref(ptr, PhantomData)
+    }
         Ref(ptr, PhantomData)
     }
     fn map<F, R>(self, map: F) -> Map<Self, F>
