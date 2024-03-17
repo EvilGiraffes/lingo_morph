@@ -1,6 +1,8 @@
 use std::{
     error::Error,
-    fmt::{Debug, Display}, marker::PhantomData, ptr::NonNull,
+    fmt::{Debug, Display},
+    marker::PhantomData,
+    ptr::NonNull,
 };
 
 pub use end::{FResult, FinalProcessor};
