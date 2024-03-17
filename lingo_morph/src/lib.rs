@@ -1,6 +1,6 @@
 use std::{
     error::Error,
-    fmt::{Debug, Display},
+    fmt::{Debug, Display}, marker::PhantomData, ptr::NonNull,
 };
 
 pub use end::{FResult, FinalProcessor};
@@ -82,6 +82,13 @@ pub trait Processor<I> {
     fn process<S>(&mut self, given: S) -> Processed<Self::Output, S>
     where
         S: Source<Item = I>;
+    fn as_ref(&mut self) -> Ref<'_, Self>
+    where
+        Self: Sized,
+    {
+        let ptr = NonNull::new(self).unwrap_or_else(|| unreachable!("Self does not exist"));
+        Ref(ptr, PhantomData)
+    }
     fn map<F, R>(self, map: F) -> Map<Self, F>
     where
         Self: Sized,
@@ -161,6 +168,23 @@ pub trait Processor<I> {
         Self: Sized,
     {
         End::new(self)
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct Ref<'a, P>(NonNull<P>, PhantomData<&'a mut P>);
+
+impl<'a, P, I> Processor<I> for Ref<'a, P>
+where
+    P: Processor<I>,
+{
+    type Output = P::Output;
+    fn process<S>(&mut self, given: S) -> Processed<Self::Output, S>
+    where
+        S: Source<Item = I>,
+    {
+        let processor = unsafe { self.0.as_mut() };
+        processor.process(given)
     }
 }
 
