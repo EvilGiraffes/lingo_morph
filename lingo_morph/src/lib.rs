@@ -180,7 +180,7 @@ pub trait Processor<I> {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy)]
 pub struct Ref<'a, P>(NonNull<P>, PhantomData<&'a mut P>);
 
 impl<'a, P, I> Processor<I> for Ref<'a, P>
