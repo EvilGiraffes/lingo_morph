@@ -91,6 +91,11 @@ pub trait Processor<I> {
         let ptr = NonNull::new(self).expect("Self cannot be a null reference");
         Ref(ptr, PhantomData)
     }
+    unsafe fn as_ref_unchecked(&mut self) -> Ref<'_, Self>
+    where
+        Self: Sized,
+    {
+        let ptr = NonNull::new_unchecked(self);
         Ref(ptr, PhantomData)
     }
     fn map<F, R>(self, map: F) -> Map<Self, F>
