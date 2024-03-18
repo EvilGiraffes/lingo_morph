@@ -5,6 +5,7 @@ pub struct Char(char);
 
 impl Processor<char> for Char {
     type Output = char;
+
     fn process<S>(&mut self, mut given: S) -> Processed<Self::Output, S>
     where
         S: Source<Item = char>,
@@ -35,4 +36,3 @@ pub fn digit(digit: u8) -> Option<impl Processor<char, Output = u8>> {
         _ => None,
     }
 }
-

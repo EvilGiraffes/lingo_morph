@@ -40,6 +40,7 @@ impl ProcessingError {
             error: Box::new(error),
         }
     }
+
     pub fn error(&self) -> &dyn Error {
         self.error.as_ref()
     }
@@ -84,6 +85,7 @@ pub trait Processor<I> {
     fn process<S>(&mut self, given: S) -> Processed<Self::Output, S>
     where
         S: Source<Item = I>;
+
     fn as_ref(&mut self) -> Ref<'_, Self>
     where
         Self: Sized,
@@ -91,6 +93,7 @@ pub trait Processor<I> {
         let ptr = NonNull::new(self).expect("Self cannot be a null reference");
         Ref(ptr, PhantomData)
     }
+
     unsafe fn as_ref_unchecked(&mut self) -> Ref<'_, Self>
     where
         Self: Sized,
@@ -98,6 +101,7 @@ pub trait Processor<I> {
         let ptr = NonNull::new_unchecked(self);
         Ref(ptr, PhantomData)
     }
+
     fn map<F, R>(self, map: F) -> Map<Self, F>
     where
         Self: Sized,
@@ -108,6 +112,7 @@ pub trait Processor<I> {
             map,
         }
     }
+
     fn replace<T>(self, with: T) -> CopyReplace<Self, T>
     where
         Self: Sized,
@@ -115,6 +120,7 @@ pub trait Processor<I> {
     {
         CopyReplace(self, with)
     }
+
     fn connect<F, P, PI, PO>(self, binder: F) -> P
     where
         Self: Sized,
@@ -123,6 +129,7 @@ pub trait Processor<I> {
     {
         binder(self)
     }
+
     fn left_zip<P>(self, other: P) -> Zip<Self, P>
     where
         Self: Sized,
@@ -130,6 +137,7 @@ pub trait Processor<I> {
     {
         Zip(self, other)
     }
+
     fn right_zip<P>(self, other: P) -> Zip<P, Self>
     where
         Self: Sized,
@@ -137,6 +145,7 @@ pub trait Processor<I> {
     {
         other.left_zip(self)
     }
+
     fn left_ignore<P>(self, other: P) -> LeftIgnore<Self, P>
     where
         Self: Sized,
@@ -144,6 +153,7 @@ pub trait Processor<I> {
     {
         LeftIgnore(self, other)
     }
+
     fn right_ignore<P>(self, other: P) -> RightIgnore<Self, P>
     where
         Self: Sized,
@@ -151,6 +161,7 @@ pub trait Processor<I> {
     {
         other.left_ignore(self)
     }
+
     fn left_or<P>(self, other: P) -> Or<Self, P>
     where
         Self: Sized + Processor<I>,
@@ -158,6 +169,7 @@ pub trait Processor<I> {
     {
         Or(self, other)
     }
+
     fn right_or<P>(self, other: P) -> Or<P, Self>
     where
         Self: Sized + Processor<I>,
@@ -165,6 +177,7 @@ pub trait Processor<I> {
     {
         other.left_or(self)
     }
+
     // TODO implement
     // fn start_chain(self) -> Chain<Self>
     // where
@@ -188,6 +201,7 @@ where
     P: Processor<I>,
 {
     type Output = P::Output;
+
     fn process<S>(&mut self, given: S) -> Processed<Self::Output, S>
     where
         S: Source<Item = I>,
@@ -208,6 +222,7 @@ where
     F: FnMut(O) -> R,
 {
     type Output = R;
+
     fn process<S>(&mut self, given: S) -> Processed<Self::Output, S>
     where
         S: Source<Item = I>,
@@ -225,6 +240,7 @@ where
     T: Copy,
 {
     type Output = T;
+
     fn process<S>(&mut self, given: S) -> Processed<Self::Output, S>
     where
         S: Source<Item = I>,
@@ -241,6 +257,7 @@ where
     B: Processor<I>,
 {
     type Output = (A::Output, B::Output);
+
     fn process<S>(&mut self, given: S) -> Processed<Self::Output, S>
     where
         S: Source<Item = I>,
@@ -265,6 +282,7 @@ where
     R: Processor<I>,
 {
     type Output = R::Output;
+
     fn process<S>(&mut self, given: S) -> Processed<Self::Output, S>
     where
         S: Source<Item = I>,
@@ -286,6 +304,7 @@ where
     B: Processor<I, Output = O>,
 {
     type Output = O;
+
     fn process<S>(&mut self, given: S) -> Processed<Self::Output, S>
     where
         S: Source<Item = I>,

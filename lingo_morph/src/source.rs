@@ -17,7 +17,7 @@ impl NewLine {
 
 pub enum Character {
     Char(char),
-    NewLine(NewLine)
+    NewLine(NewLine),
 }
 
 #[derive(Debug, Default, Clone, Copy)]
@@ -32,15 +32,19 @@ impl Location {
     pub fn line(&self) -> usize {
         self.line
     }
+
     pub fn column(&self) -> usize {
         self.column
     }
+
     pub fn at_char(&self) -> usize {
         self.at_char
     }
+
     pub fn at_bytes(&self) -> usize {
         self.at_bytes
     }
+
     pub fn increment(&mut self, character: Character) {
         self.at_char += 1;
         match character {
@@ -59,10 +63,15 @@ impl Location {
 
 pub trait Source: Iterator {
     type RollBackErr: Error + 'static;
+
     fn roll_back(&mut self, to: Location) -> Result<(), Self::RollBackErr>;
+
     fn peek(&mut self) -> Option<&Self::Item>;
+
     fn peek_mut(&mut self) -> Option<&mut Self::Item>;
+
     fn location(&self) -> Location;
+
     fn next_if<P>(&mut self, predicate: P) -> Option<Self::Item>
     where
         P: FnOnce(&Self::Item) -> bool,
@@ -74,6 +83,7 @@ pub trait Source: Iterator {
             None
         }
     }
+
     fn next_if_eq<T>(&mut self, other: &T) -> Option<Self::Item>
     where
         <Self as Iterator>::Item: PartialEq<T>,
@@ -81,4 +91,3 @@ pub trait Source: Iterator {
         self.next_if(|next| next == other)
     }
 }
-

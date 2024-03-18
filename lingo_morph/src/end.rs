@@ -41,7 +41,9 @@ pub type Final<O> = FResult<O>;
 
 pub trait FinalProcessor<I> {
     type Output;
+
     fn process(&mut self, given: I) -> Final<Self::Output>;
+
     fn conform<F, T>(self, conform: F) -> Conform<F, Self>
     where
         Self: Sized,
@@ -49,6 +51,7 @@ pub trait FinalProcessor<I> {
     {
         Conform(conform, self)
     }
+
     fn map<F, T>(self, mapper: F) -> Map<F, Self>
     where
         Self: Sized,
@@ -73,6 +76,7 @@ where
     S::RollBackErr: Error + 'static,
 {
     type Output = O;
+
     fn process(&mut self, given: S) -> Final<Self::Output> {
         self.0.process(given).into()
     }
@@ -86,6 +90,7 @@ where
     E: FinalProcessor<N, Output = O>,
 {
     type Output = O;
+
     fn process(&mut self, given: I) -> Final<Self::Output> {
         let mapped = (self.0)(given);
         self.1.process(mapped)
@@ -100,6 +105,7 @@ where
     E: FinalProcessor<I, Output = O>,
 {
     type Output = R;
+
     fn process(&mut self, given: I) -> Final<Self::Output> {
         self.1.process(given).map(|inner| (self.0)(inner))
     }
