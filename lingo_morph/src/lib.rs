@@ -59,6 +59,7 @@ impl Display for ProcessingError {
 
 impl Error for ProcessingError {}
 
+#[derive(Debug)]
 pub enum Status<O, R> {
     Done(O, R),
     Mismatch(R),
