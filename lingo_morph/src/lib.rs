@@ -5,11 +5,13 @@ use std::{
     ptr::NonNull,
 };
 
+use context::With;
 use source::{Location, Source};
 
 pub mod collections;
 pub mod processors;
 pub mod source;
+pub mod context;
 
 // This mimics the log crate to avoid checking for the feature available
 #[macro_use]
@@ -181,8 +183,13 @@ pub trait Processor<I> {
     // {
     //     Chain::new(vec![self])
     // }
+    
+    fn with<S>(self, input: S) -> With<S, Self>
+    where 
         Self: Sized,
+        S: Source<Item = I>,
     {
+        With::new(input, self)
     }
 }
 
