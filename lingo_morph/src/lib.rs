@@ -5,13 +5,9 @@ use std::{
     ptr::NonNull,
 };
 
-pub use end::{FResult, FinalProcessor};
-
-use end::End;
 use source::{Location, Source};
 
 pub mod collections;
-pub mod end;
 pub mod processors;
 pub mod source;
 
@@ -185,11 +181,8 @@ pub trait Processor<I> {
     // {
     //     Chain::new(vec![self])
     // }
-    fn end(self) -> End<Self>
-    where
         Self: Sized,
     {
-        End::new(self)
     }
 }
 
