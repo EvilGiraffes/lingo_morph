@@ -19,7 +19,6 @@ mod log;
 
 pub type PResult<I, R> = Result<Status<I, R>, ProcessingError>;
 pub type Processed<O, R> = PResult<O, R>;
-pub type RightIgnore<L, R> = LeftIgnore<R, L>;
 
 #[derive(Debug)]
 pub struct ProcessingError {
@@ -129,7 +128,7 @@ pub trait Processor<I> {
         binder(self)
     }
 
-    fn left_zip<P>(self, other: P) -> Zip<Self, P>
+    fn zip<P>(self, other: P) -> Zip<Self, P>
     where
         Self: Sized,
         P: Processor<I>,
@@ -137,15 +136,7 @@ pub trait Processor<I> {
         Zip(self, other)
     }
 
-    fn right_zip<P>(self, other: P) -> Zip<P, Self>
-    where
-        Self: Sized,
-        P: Processor<I>,
-    {
-        other.left_zip(self)
-    }
-
-    fn left_ignore<P>(self, other: P) -> LeftIgnore<Self, P>
+    fn ignore<P>(self, other: P) -> LeftIgnore<Self, P>
     where
         Self: Sized,
         P: Processor<I>,
@@ -153,28 +144,12 @@ pub trait Processor<I> {
         LeftIgnore(self, other)
     }
 
-    fn right_ignore<P>(self, other: P) -> RightIgnore<Self, P>
-    where
-        Self: Sized,
-        P: Processor<I>,
-    {
-        other.left_ignore(self)
-    }
-
-    fn left_or<P>(self, other: P) -> Or<Self, P>
+    fn or<P>(self, other: P) -> Or<Self, P>
     where
         Self: Sized + Processor<I>,
         P: Processor<I, Output = Self::Output>,
     {
         Or(self, other)
-    }
-
-    fn right_or<P>(self, other: P) -> Or<P, Self>
-    where
-        Self: Sized + Processor<I>,
-        P: Processor<I, Output = Self::Output>,
-    {
-        other.left_or(self)
     }
 
     // TODO implement
