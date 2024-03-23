@@ -208,10 +208,10 @@ pub struct Map<P, F> {
     map: F,
 }
 
-impl<P, I, F, O, R> Processor<I> for Map<P, F>
+impl<P, I, F, R> Processor<I> for Map<P, F>
 where
-    P: Processor<I, Output = O>,
-    F: FnMut(O) -> R,
+    P: Processor<I>,
+    F: FnMut(P::Output) -> R,
 {
     type Output = R;
 
