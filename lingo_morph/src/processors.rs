@@ -120,6 +120,10 @@ impl Processor<char> for CharRange {
     }
 }
 
+pub fn no_op() -> Const<()> {
+    constant(())
+}
+
 pub fn constant<T: Clone>(val: T) -> Const<T> {
     Const(val)
 }
