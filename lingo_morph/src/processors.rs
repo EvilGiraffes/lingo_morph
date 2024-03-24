@@ -3,6 +3,24 @@ use std::ops::{Bound, RangeBounds};
 use crate::{source::Source, Processed, Processor, Status};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+#[repr(transparent)]
+pub struct Const<T>(T);
+
+impl<T> Processor<T> for Const<T>
+where
+    T: Clone,
+{
+    type Output = T;
+
+    fn process<S>(&mut self, given: S) -> Processed<Self::Output, S>
+    where
+        S: Source<Item = T>,
+    {
+        Ok(Status::Done(self.0.clone(), given))
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Char(char);
 
 impl Processor<char> for Char {
@@ -47,6 +65,10 @@ impl Processor<char> for CharRange {
             None => Ok(Status::Mismatch(given)),
         }
     }
+}
+
+pub fn constant<T: Clone>(val: T) -> Const<T> {
+    Const(val)
 }
 
 pub fn char(from: char) -> Char {
