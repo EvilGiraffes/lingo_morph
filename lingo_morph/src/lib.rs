@@ -170,14 +170,16 @@ pub trait Processor<I> {
 }
 
 #[derive(Debug, Clone, Copy)]
+#[repr(transparent)]
 pub struct Ref<'a, P>(NonNull<P>, PhantomData<&'a mut P>);
 
-impl<'a, P, I> Processor<I> for Ref<'a, P>
+impl<P, I> Processor<I> for Ref<'_, P>
 where
     P: Processor<I>,
 {
     type Output = P::Output;
 
+    #[inline]
     fn process<S>(&mut self, given: S) -> Processed<Self::Output, S>
     where
         S: Source<Item = I>,
