@@ -38,6 +38,42 @@ where
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+#[repr(transparent)]
+pub struct Mut<T>(T);
+
+impl<T> Mut<T> {
+    pub fn get(&self) -> &T {
+        &self.0
+    }
+
+    pub fn set(&mut self, new: T) {
+        self.0 = new;
+    }
+
+    pub fn map<F, U>(self, map: F) -> Mut<U>
+    where
+        F: FnOnce(T) -> U,
+        U: Clone,
+    {
+        Mut(map(self.0))
+    }
+}
+
+impl<T> Processor<T> for Mut<T>
+where
+    T: Clone,
+{
+    type Output = T;
+
+    fn process<S>(&mut self, given: S) -> Processed<Self::Output, S>
+    where
+        S: Source<Item = T>,
+    {
+        Ok(Status::Done(self.0.clone(), given))
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Char(char);
 
 impl Processor<char> for Char {
@@ -93,6 +129,10 @@ where
     F: Fn() -> T,
 {
     ConstWith(func)
+}
+
+pub fn mutable<T: Clone>(inital: T) -> Mut<T> {
+    Mut(inital)
 }
 
 pub fn char(from: char) -> Char {
