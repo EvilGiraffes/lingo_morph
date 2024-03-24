@@ -21,6 +21,23 @@ where
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+pub struct ConstWith<F>(F);
+
+impl<F, T> Processor<char> for ConstWith<F>
+where
+    F: Fn() -> T,
+{
+    type Output = T;
+
+    fn process<S>(&mut self, given: S) -> Processed<Self::Output, S>
+    where
+        S: Source<Item = char>,
+    {
+        Ok(Status::Done((self.0)(), given))
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Char(char);
 
 impl Processor<char> for Char {
@@ -69,6 +86,13 @@ impl Processor<char> for CharRange {
 
 pub fn constant<T: Clone>(val: T) -> Const<T> {
     Const(val)
+}
+
+pub fn constant_with<F, T>(func: F) -> ConstWith<F>
+where
+    F: Fn() -> T,
+{
+    ConstWith(func)
 }
 
 pub fn char(from: char) -> Char {
