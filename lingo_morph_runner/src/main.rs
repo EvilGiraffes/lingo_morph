@@ -49,8 +49,8 @@ impl Iterator for TempSource {
     type Item = char;
 
     fn next(&mut self) -> Option<Self::Item> {
-        let index = self.index();
         self.increment();
+        let index = self.index();
         self.items.get(index).copied()
     }
 }
