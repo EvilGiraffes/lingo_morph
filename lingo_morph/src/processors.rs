@@ -78,3 +78,26 @@ pub fn digit(digit: u8) -> Option<impl Processor<char, Output = u8>> {
         _ => None,
     }
 }
+
+pub fn digit_range<R>(range: R) -> Option<impl Processor<char, Output = u8>>
+where 
+    R: RangeBounds<u8>
+{
+    const ZERO: u8 = '0' as u8;
+    let start = digit_inclusive_or(range.start_bound(), 0);
+    let end = digit_inclusive_or(range.end_bound(), 9);
+    if start > end || start > 8 || end > 9 {
+        None
+    } else {
+        Some(char_range((start + ZERO) as char..=(end + ZERO) as char).map(|inner| (inner as u8) - ZERO))
+    }
+}
+
+fn digit_inclusive_or(bound: Bound<&u8>, default: u8) -> u8 {
+
+    match bound {
+        Bound::Included(x) => *x,
+        Bound::Excluded(x) => *x - 1,
+        Bound::Unbounded => default,
+    }
+}
