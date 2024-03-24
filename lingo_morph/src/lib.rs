@@ -2,7 +2,6 @@ use std::{
     error::Error,
     fmt::{Debug, Display},
     marker::PhantomData,
-    ops::{Deref, DerefMut},
     ptr::NonNull,
 };
 
@@ -171,35 +170,20 @@ pub trait Processor<I> {
 }
 
 #[derive(Debug, Clone, Copy)]
-#[repr(transparent)]
 pub struct Ref<'a, P>(NonNull<P>, PhantomData<&'a mut P>);
 
-impl<P, I> Processor<I> for Ref<'_, P>
+impl<'a, P, I> Processor<I> for Ref<'a, P>
 where
     P: Processor<I>,
 {
     type Output = P::Output;
 
-    #[inline]
     fn process<S>(&mut self, given: S) -> Processed<Self::Output, S>
     where
         S: Source<Item = I>,
     {
-        self.deref_mut().process(given)
-    }
-}
-
-impl<P> Deref for Ref<'_, P> {
-    type Target = P;
-
-    fn deref(&self) -> &Self::Target {
-        unsafe { self.0.as_ref() }
-    }
-}
-
-impl<P> DerefMut for Ref<'_, P> {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        unsafe { self.0.as_mut() }
+        let processor = unsafe { self.0.as_mut() };
+        processor.process(given)
     }
 }
 
