@@ -1,7 +1,7 @@
 use std::convert::Infallible;
 
 use lingo_morph::{
-    processors::digit,
+    processors::digit_range,
     source::{Location, Source},
     Processor,
 };
@@ -86,17 +86,7 @@ fn main() {
         items: parse_string,
         idx: None,
     };
-    let parser = digit(0)
-        .unwrap()
-        .or(digit(1).unwrap())
-        .or(digit(2).unwrap())
-        .or(digit(3).unwrap())
-        .or(digit(4).unwrap())
-        .or(digit(5).unwrap())
-        .or(digit(6).unwrap())
-        .or(digit(7).unwrap())
-        .or(digit(8).unwrap())
-        .or(digit(9).unwrap());
+    let parser = digit_range(..).unwrap();
     let result = parser.with(given).fold(0_u32, |state, x| {
         if state == 0 {
             x as u32
