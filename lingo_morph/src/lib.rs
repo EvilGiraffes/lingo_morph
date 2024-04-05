@@ -208,7 +208,7 @@ where
         let fallback = given.location();
         match self.0.process(given)? {
             Status::Done(_, rest) => rollback_if_process_fail(fallback, &mut self.1, rest),
-            Status::Mismatch(rest) => Ok(Status::Mismatch(rest)),
+            Status::Mismatch(rest) => mismatch(rest),
         }
     }
 }
