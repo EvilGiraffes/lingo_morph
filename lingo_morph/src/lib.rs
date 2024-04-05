@@ -57,6 +57,17 @@ pub trait Processor<I> {
         CopyReplace(self, with)
     }
 
+    fn take(self, amount: usize) -> Take<Self>
+    where
+        Self: Sized
+    {
+        Take {
+            processor: self,
+            current: 0,
+            target: amount,
+        }
+    }
+
     fn connect<F, P, PI, PO>(self, binder: F) -> P
     where
         Self: Sized,
@@ -162,6 +173,32 @@ where
         S: Source<Item = I>,
     {
         Ok(self.0.process(given)?.map(|_| self.1))
+    }
+}
+
+pub struct Take<P> {
+    processor: P,
+    current: usize,
+    target: usize,
+}
+
+impl<P, I> Processor<I> for Take<P>
+where
+    P: Processor<I>,
+{
+    type Output = P::Output;
+
+    fn process<S>(&mut self, given: S) -> Processed<Self::Output, S>
+    where
+        S: Source<Item = I>,
+    {
+        if self.current < self.target {
+            self.current += 1;
+            self.processor.process(given)
+        } else {
+            self.current = 0;
+            mismatch(given)
+        }
     }
 }
 
