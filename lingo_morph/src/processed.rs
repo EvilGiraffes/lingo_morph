@@ -80,6 +80,16 @@ pub fn mismatch<O, R>(rest: R) -> Processed<O, R> {
     Ok(Status::Mismatch(rest))
 }
 
+#[macro_export]
+macro_rules! try_proc {
+    ($processed:expr, $source: expr) => {
+        match $processed {
+            Ok(val) => val,
+            Err(error) => return $crate::processed::err($source, error)
+        }
+    };
+}
+
 pub fn err<O, R, S, E>(source: &S, error: E) -> Processed<O, R>
 where
     S: Source,
