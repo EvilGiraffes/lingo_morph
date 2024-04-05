@@ -2,6 +2,8 @@ use std::ops::{Bound, RangeBounds};
 
 use crate::{done, mismatch, source::Source, Processed, Processor};
 
+pub type NoOp = Const<()>;
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 #[repr(transparent)]
 pub struct Const<T>(T);
@@ -120,7 +122,7 @@ impl Processor<char> for CharRange {
     }
 }
 
-pub fn no_op() -> Const<()> {
+pub fn no_op() -> NoOp {
     constant(())
 }
 
