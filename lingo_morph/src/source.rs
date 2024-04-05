@@ -1,5 +1,15 @@
 use std::error::Error;
 
+#[macro_export]
+macro_rules! try_peek {
+    ($source:expr) => {
+        match $source.peek() {
+            Some(val) => val,
+            None => return $crate::processed::mismatch($source),
+        }
+    };
+}
+
 pub enum NewLine {
     Unix,
     Windows,
