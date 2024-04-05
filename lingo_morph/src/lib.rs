@@ -68,6 +68,14 @@ pub trait Processor<I> {
         }
     }
 
+    fn take_while<P>(self, predicate: P) -> TakeWhile<Self, P>
+    where 
+        Self: Sized,
+        P: FnMut(&I) -> bool,
+    {
+        TakeWhile(self, predicate)
+    }
+
     fn connect<F, P, PI, PO>(self, binder: F) -> P
     where
         Self: Sized,
@@ -197,6 +205,28 @@ where
             self.processor.process(given)
         } else {
             self.current = 0;
+            mismatch(given)
+        }
+    }
+}
+
+pub struct TakeWhile<P, F>(P, F);
+
+impl<P, I, F> Processor<I> for TakeWhile<P, F>
+where
+    P: Processor<I>,
+    F: FnMut(&I) -> bool,
+{
+    type Output = P::Output;
+
+    fn process<S>(&mut self, mut given: S) -> Processed<Self::Output, S>
+    where
+        S: Source<Item = I>,
+    {
+        let peeked = try_peek!(given);
+        if (self.1)(peeked) {
+            self.0.process(given)
+        } else {
             mismatch(given)
         }
     }
