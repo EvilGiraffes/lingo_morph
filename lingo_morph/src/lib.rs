@@ -1,19 +1,16 @@
-pub use processed::{done, mismatch, err};
+pub use processed::{done, err, mismatch};
 
-use std::{
-    marker::PhantomData,
-    ptr::NonNull,
-};
+use std::{marker::PhantomData, ptr::NonNull};
 
 use context::With;
+use processed::{Processed, ProcessingError, Status};
 use source::{Location, Source};
-use processed::{Status, Processed, ProcessingError};
 
 pub mod collections;
 pub mod context;
+pub mod processed;
 pub mod processors;
 pub mod source;
-pub mod processed;
 
 // This mimics the log crate to avoid checking for the feature available
 #[macro_use]
