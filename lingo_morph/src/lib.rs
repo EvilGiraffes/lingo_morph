@@ -178,13 +178,11 @@ where
     where
         S: Source<Item = I>,
     {
-        let status = self.0.process(given)?;
-        match status {
-            Status::Done(first, rest) => {
+        match try_done!(self.0.process(given)) {
+            (first, rest) => {
                 let second = self.1.process(rest)?;
                 Ok(second.map(|inner| (first, inner)))
             }
-            Status::Mismatch(rest) => mismatch(rest),
         }
     }
 }
@@ -203,9 +201,8 @@ where
         S: Source<Item = I>,
     {
         let fallback = given.location();
-        match self.0.process(given)? {
-            Status::Done(_, rest) => rollback_if_process_fail(fallback, &mut self.1, rest),
-            Status::Mismatch(rest) => mismatch(rest),
+        match try_done!(self.0.process(given)) {
+            (_, rest) => rollback_if_process_fail(fallback, &mut self.1, rest),
         }
     }
 }

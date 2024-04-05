@@ -61,6 +61,17 @@ impl<O, R> Status<O, R> {
     }
 }
 
+#[macro_export]
+macro_rules! try_done {
+    ($processed:expr) => {
+        match $processed? {
+            $crate::processed::Status::Done(output, rest) => (output, core::convert::From::from(rest)),
+            $crate::processed::Status::Mismatch(rest) => return Ok(
+                $crate::processed::Status::Mismatch(core::convert::From::from(rest))),
+        }
+    };
+}
+
 pub fn done<O, R>(output: O, rest: R) -> Processed<O, R> {
     Ok(Status::Done(output, rest))
 }
