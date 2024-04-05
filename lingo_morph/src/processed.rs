@@ -61,3 +61,18 @@ impl<O, R> Status<O, R> {
     }
 }
 
+pub fn done<O, R>(output: O, rest: R) -> Processed<O, R> {
+    Ok(Status::Done(output, rest))
+}
+
+pub fn mismatch<O, R>(rest: R) -> Processed<O, R> {
+    Ok(Status::Mismatch(rest))
+}
+
+pub fn err<O, R, S, E>(source: &S, error: E) -> Processed<O, R>
+where
+    S: Source,
+    E: Error + 'static,
+{
+    Err(ProcessingError::from_source(source, error))
+}

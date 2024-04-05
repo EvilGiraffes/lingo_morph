@@ -1,6 +1,6 @@
 use std::ops::{Bound, RangeBounds};
 
-use crate::{source::Source, Processed, Processor, Status};
+use crate::{done, mismatch, source::Source, Processed, Processor};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 #[repr(transparent)]
@@ -16,7 +16,7 @@ where
     where
         S: Source<Item = T>,
     {
-        Ok(Status::Done(self.0.clone(), given))
+        done(self.0.clone(), given)
     }
 }
 
@@ -33,7 +33,7 @@ where
     where
         S: Source<Item = char>,
     {
-        Ok(Status::Done((self.0)(), given))
+        done((self.0)(), given)
     }
 }
 
@@ -69,7 +69,7 @@ where
     where
         S: Source<Item = T>,
     {
-        Ok(Status::Done(self.0.clone(), given))
+        done(self.0.clone(), given)
     }
 }
 
@@ -84,8 +84,8 @@ impl Processor<char> for Char {
         S: Source<Item = char>,
     {
         match given.next_if_eq(&self.0) {
-            Some(next) => Ok(Status::Done(next, given)),
-            None => Ok(Status::Mismatch(given)),
+            Some(next) => done(next, given),
+            None => mismatch(given),
         }
     }
 }
@@ -114,8 +114,8 @@ impl Processor<char> for CharRange {
         S: Source<Item = char>,
     {
         match given.next_if(|item| self.contains(item)) {
-            Some(next) => Ok(Status::Done(next, given)),
-            None => Ok(Status::Mismatch(given)),
+            Some(next) => done(next, given),
+            None => mismatch(given),
         }
     }
 }

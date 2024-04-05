@@ -1,3 +1,4 @@
+pub use processed::{done, mismatch, err};
 
 use std::{
     marker::PhantomData,
@@ -186,8 +187,7 @@ where
                 let second = self.1.process(rest)?;
                 Ok(second.map(|inner| (first, inner)))
             }
-            Status::Mismatch(rest) => Ok(Status::Mismatch(rest)),
-            Status::EOF => Ok(Status::EOF),
+            Status::Mismatch(rest) => mismatch(rest),
         }
     }
 }
@@ -209,7 +209,6 @@ where
         match self.0.process(given)? {
             Status::Done(_, rest) => rollback_if_process_fail(fallback, &mut self.1, rest),
             Status::Mismatch(rest) => Ok(Status::Mismatch(rest)),
-            Status::EOF => Ok(Status::EOF),
         }
     }
 }
@@ -231,7 +230,6 @@ where
         match status {
             Status::Done(_, _) => Ok(status),
             Status::Mismatch(rest) => self.1.process(rest),
-            Status::EOF => Ok(Status::EOF),
         }
     }
 }
@@ -246,11 +244,10 @@ where
     S: Source<Item = I>,
 {
     match processor.process(given)? {
-        Status::Done(output, rest) => Ok(Status::Done(output, rest)),
+        Status::Done(output, rest) => done(output, rest),
         Status::Mismatch(mut rest) => match rest.roll_back(fallback) {
-            Ok(_) => Ok(Status::Mismatch(rest)),
-            Err(error) => Err(ProcessingError::from_source(&rest, error)),
+            Ok(_) => mismatch(rest),
+            Err(error) => err(&rest, error),
         },
-        Status::EOF => Ok(Status::EOF),
     }
 }
