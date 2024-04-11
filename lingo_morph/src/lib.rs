@@ -76,6 +76,19 @@ pub trait Processor<I> {
         TakeWhile(self, predicate)
     }
 
+    fn fold<A, S, F>(self, accum: A, fold: F) -> Fold<Self, A, F>
+    where
+        Self: Sized,
+        A: Fn() -> S,
+        F: FnMut(S, Self::Output) -> S,
+    {
+        Fold {
+            processor: self,
+            accum,
+            fold,
+        }
+    }
+
     fn connect<F, P, PI, PO>(self, binder: F) -> P
     where
         Self: Sized,
