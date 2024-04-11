@@ -1,5 +1,20 @@
+use std::fmt::Debug;
+
 use crate::{source::Source, ProcessingError, Processor, Status};
 
+#[derive(Debug)]
+pub enum ProcessingFailed {
+    DuringProcessing(ProcessingError),
+    NoReturn,
+}
+
+impl From<ProcessingError> for ProcessingFailed {
+    fn from(value: ProcessingError) -> Self {
+        ProcessingFailed::DuringProcessing(value)
+    }
+}
+
+#[derive(Debug)]
 pub struct With<'a, I, P>(I, &'a mut P);
 
 impl<'a, I, P> With<'a, I, P> {
@@ -13,6 +28,13 @@ where
     P: Processor<I>,
     S: Source<Item = I>,
 {
+    pub fn process(self) -> Result<P::Output, ProcessingFailed> {
+        match self.1.process(self.0)? {
+            Status::Done(output, _) => Ok(output),
+            Status::Mismatch(_) => Err(ProcessingFailed::NoReturn),
+        }
+    }
+
     pub fn fold<A, F>(self, init: A, mut func: F) -> Result<A, ProcessingError>
     where
         F: FnMut(A, P::Output) -> A,
