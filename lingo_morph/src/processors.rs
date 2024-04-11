@@ -1,4 +1,7 @@
-use std::ops::{Bound, RangeBounds};
+use std::{
+    marker::PhantomData,
+    ops::{Bound, RangeBounds},
+};
 
 use crate::{done, mismatch, source::Source, Processed, Processor};
 
@@ -75,6 +78,23 @@ where
     }
 }
 
+#[derive(Debug, Clone, Copy)]
+pub struct Any<I>(PhantomData<I>);
+
+impl<I> Processor<I> for Any<I> {
+    type Output = I;
+
+    fn process<S>(&mut self, mut given: S) -> Processed<Self::Output, S>
+    where
+        S: Source<Item = I>,
+    {
+        match given.next() {
+            Some(val) => done(val, given),
+            None => mismatch(given),
+        }
+    }
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Char(char);
 
@@ -139,6 +159,10 @@ where
 
 pub fn mutable<T: Clone>(inital: T) -> Mut<T> {
     Mut(inital)
+}
+
+pub fn any<I>() -> Any<I> {
+    Any(PhantomData)
 }
 
 pub fn char(from: char) -> Char {
