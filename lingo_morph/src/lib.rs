@@ -117,7 +117,7 @@ pub trait Processor<I> {
     //     Chain::new(vec![self])
     // }
 
-    fn with<S>(self, input: S) -> With<S, Self>
+    fn with<S>(&mut self, input: S) -> With<'_, S, Self>
     where
         Self: Sized,
         S: Source<Item = I>,

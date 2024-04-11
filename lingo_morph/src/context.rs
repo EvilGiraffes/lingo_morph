@@ -1,14 +1,14 @@
 use crate::{source::Source, ProcessingError, Processor, Status};
 
-pub struct With<I, P>(I, P);
+pub struct With<'a, I, P>(I, &'a mut P);
 
-impl<I, P> With<I, P> {
-    pub(crate) fn new(input: I, processor: P) -> Self {
+impl<'a, I, P> With<'a, I, P> {
+    pub(crate) fn new(input: I, processor: &'a mut P) -> Self {
         Self(input, processor)
     }
 }
 
-impl<S, I, P> With<S, P>
+impl<S, I, P> With<'_, S, P>
 where
     P: Processor<I>,
     S: Source<Item = I>,
@@ -19,8 +19,7 @@ where
     {
         let mut state = init;
         let mut current = self.0;
-        let mut processor = self.1;
-        while let Status::Done(output, rest) = processor.process(current)? {
+        while let Status::Done(output, rest) = self.1.process(current)? {
             current = rest;
             state = func(state, output);
         }

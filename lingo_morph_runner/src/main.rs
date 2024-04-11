@@ -86,7 +86,7 @@ fn main() {
         items: parse_string,
         idx: None,
     };
-    let parser = digit_range(..).unwrap();
+    let mut parser = digit_range(..).unwrap();
     let result = parser.with(given).fold(0_u32, |state, x| {
         if state == 0 {
             x as u32
