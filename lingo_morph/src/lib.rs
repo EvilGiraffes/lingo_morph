@@ -113,6 +113,13 @@ pub trait Processor<I> {
     {
         Ignore(self, other)
     }
+
+    fn ignore_next<P>(self, other: P) -> IgnoreNext<Self, P>
+    where
+        Self: Sized,
+        P: Processor<I>,
+    {
+        IgnoreNext(self, other)
     }
 
     fn or<P>(self, other: P) -> Or<Self, P>
@@ -316,6 +323,29 @@ where
         let fallback = given.location();
         match try_done!(self.0.process(given)) {
             (_, rest) => rollback_if_process_fail(fallback, &mut self.1, rest),
+        }
+    }
+}
+
+pub struct IgnoreNext<L, R>(L, R);
+
+impl<L, R, I> Processor<I> for IgnoreNext<L, R>
+where
+    L: Processor<I>,
+    R: Processor<I>,
+{
+    type Output = L::Output;
+
+    fn process<S>(&mut self, given: S) -> Processed<Self::Output, S>
+    where
+        S: Source<Item = I>,
+    {
+        let fallback = given.location();
+        match try_done!(self.0.process(given)) {
+            (output, rest) => match rollback_if_process_fail(fallback, &mut self.1, rest)? {
+                Status::Done(_, rest) => done(output, rest),
+                Status::Mismatch(rest) => mismatch(rest),
+            } 
         }
     }
 }
