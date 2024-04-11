@@ -65,9 +65,8 @@ impl<O, R> Status<O, R> {
 macro_rules! try_done {
     ($processed:expr) => {
         match $processed? {
-            $crate::processed::Status::Done(output, rest) => (output, core::convert::From::from(rest)),
-            $crate::processed::Status::Mismatch(rest) => return Ok(
-                $crate::processed::Status::Mismatch(core::convert::From::from(rest))),
+            $crate::processed::Status::Done(output, rest) => (output, rest),
+            $crate::processed::Status::Mismatch(rest) => return $crate::processed::mismatch(rest),
         }
     };
 }
