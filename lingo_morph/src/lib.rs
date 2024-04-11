@@ -106,12 +106,13 @@ pub trait Processor<I> {
         Zip(self, other)
     }
 
-    fn ignore<P>(self, other: P) -> LeftIgnore<Self, P>
+    fn ignore<P>(self, other: P) -> Ignore<Self, P>
     where
         Self: Sized,
         P: Processor<I>,
     {
-        LeftIgnore(self, other)
+        Ignore(self, other)
+    }
     }
 
     fn or<P>(self, other: P) -> Or<Self, P>
@@ -299,9 +300,9 @@ where
     }
 }
 
-pub struct LeftIgnore<L, R>(L, R);
+pub struct Ignore<L, R>(L, R);
 
-impl<L, R, I> Processor<I> for LeftIgnore<L, R>
+impl<L, R, I> Processor<I> for Ignore<L, R>
 where
     L: Processor<I>,
     R: Processor<I>,

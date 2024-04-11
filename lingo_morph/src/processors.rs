@@ -165,11 +165,11 @@ pub fn any<I>() -> Any<I> {
     Any(PhantomData)
 }
 
-pub fn char(from: char) -> Char {
+pub fn character(from: char) -> Char {
     Char(from)
 }
 
-pub fn char_range<R>(range: R) -> CharRange
+pub fn character_range<R>(range: R) -> CharRange
 where
     R: RangeBounds<char>,
 {
@@ -206,7 +206,7 @@ where
         None
     } else {
         Some(
-            char_range((start + ZERO) as char..=(end + ZERO) as char)
+            character_range((start + ZERO) as char..=(end + ZERO) as char)
                 .map(|inner| (inner as u8) - ZERO),
         )
     }
