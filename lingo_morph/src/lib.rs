@@ -59,7 +59,7 @@ pub trait Processor<I> {
 
     fn take(self, amount: usize) -> Take<Self>
     where
-        Self: Sized
+        Self: Sized,
     {
         Take {
             processor: self,
@@ -69,7 +69,7 @@ pub trait Processor<I> {
     }
 
     fn take_while<P>(self, predicate: P) -> TakeWhile<Self, P>
-    where 
+    where
         Self: Sized,
         P: FnMut(&I) -> bool,
     {
@@ -228,6 +228,38 @@ where
             self.0.process(given)
         } else {
             mismatch(given)
+        }
+    }
+}
+
+pub struct Fold<P, A, F> {
+    processor: P,
+    accum: A,
+    fold: F,
+}
+
+impl<P, A, F, ST, I> Processor<I> for Fold<P, A, F>
+where
+    P: Processor<I>,
+    A: Fn() -> ST,
+    F: FnMut(ST, P::Output) -> ST,
+{
+    type Output = ST;
+
+    fn process<S>(&mut self, given: S) -> Processed<Self::Output, S>
+    where
+        S: Source<Item = I>,
+    {
+        let mut state = (self.accum)();
+        let mut rest = given;
+        loop {
+            rest = match self.processor.process(rest)? {
+                Status::Done(output, new_rest) => {
+                    state = (self.fold)(state, output);
+                    new_rest
+                }
+                Status::Mismatch(new_rest) => return done(state, new_rest),
+            }
         }
     }
 }
