@@ -1,7 +1,7 @@
-use std::convert::Infallible;
+use std::{convert::Infallible, fmt::Debug};
 
 use lingo_morph::{
-    processors::digit_range,
+    processors::{any, character, constant_with, digit_range},
     source::{Location, Source},
     Processor,
 };
@@ -80,19 +80,73 @@ impl Source for TempSource {
     }
 }
 
-fn main() {
-    let parse_string: Vec<_> = "0123456789".chars().collect();
-    let given = TempSource {
-        items: parse_string,
-        idx: None,
-    };
-    let mut parser = digit_range(..).unwrap();
-    let result = parser.with(given).fold(0_u32, |state, x| {
-        if state == 0 {
-            x as u32
+#[allow(unused)]
+#[derive(Debug)]
+struct ParseThis {
+    some_string: String,
+    some_u32: u32,
+}
+
+#[derive(Debug, Default, Clone)]
+struct ParseThisBuilder {
+    some_string: Option<String>,
+    some_u32: Option<u32>,
+}
+
+impl ParseThisBuilder {
+    fn some_string(&mut self, str: String) -> &mut Self {
+        self.some_string = Some(str);
+        self
+    }
+
+    fn some_u32(&mut self, x: u32) -> &mut Self {
+        self.some_u32 = Some(x);
+        self
+    }
+
+    fn build(self) -> Option<ParseThis> {
+        Some(ParseThis {
+            some_string: self.some_string?,
+            some_u32: self.some_u32?,
+        })
+    }
+}
+
+fn create_parse_this() -> impl Processor<char, Output = ParseThis> {
+    let str_parser = any::<char>().take(11).fold(|| String::new(), |mut str, x| {
+        str.push(x);
+        str
+    });
+    let u32_parser = digit_range(..).unwrap().map(|x| x as u32).fold(|| 0, |current, x| {
+        if current == 0 {
+            x
         } else {
-            state * 10 + (x as u32)
+            current * 10 + x
         }
     });
-    println!("{result:?}")
+    constant_with(|| ParseThisBuilder::default())
+            .zip(str_parser)
+            .map(|(mut builder, str)| {
+                builder.some_string(str);
+                builder
+            })
+            .ignore_next(character(' '))
+            .zip(u32_parser)
+            .map(|(mut builder, x)| {
+                builder.some_u32(x);
+                builder
+            })
+            .map(|builder| builder.build().unwrap())
+}
+
+fn main() {
+    let src_code = "hello_world 50123".chars().collect();
+    let source = TempSource {
+        items: src_code,
+        idx: None,
+    };
+    match create_parse_this().with(source).process() {
+            Ok(value) => println!("{value:#?}"),
+            Err(error) => println!("{error:#?}"),
+        }
 }
