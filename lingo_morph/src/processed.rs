@@ -72,10 +72,12 @@ macro_rules! try_done {
     };
 }
 
+#[inline]
 pub fn done<O, R>(output: O, rest: R) -> Processed<O, R> {
     Ok(Status::Done(output, rest))
 }
 
+#[inline]
 pub fn mismatch<O, R>(rest: R) -> Processed<O, R> {
     Ok(Status::Mismatch(rest))
 }
@@ -90,6 +92,7 @@ macro_rules! try_proc {
     };
 }
 
+#[inline]
 pub fn err<O, R, S, E>(source: &S, error: E) -> Processed<O, R>
 where
     S: Source,
