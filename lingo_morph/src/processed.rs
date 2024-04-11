@@ -82,7 +82,7 @@ pub fn mismatch<O, R>(rest: R) -> Processed<O, R> {
 }
 
 #[macro_export]
-macro_rules! try_proc {
+macro_rules! try_ok {
     ($processed:expr, $source: expr) => {
         match $processed {
             Ok(val) => val,
