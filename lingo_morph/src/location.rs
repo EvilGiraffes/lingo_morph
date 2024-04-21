@@ -118,7 +118,7 @@ enum BufferLocation {
 }
 
 impl BufferLocation {
-    fn get<T>(&self, from: &RingBuf<T>) -> Option<&T> {
+    fn get<'a, T>(&'a self, from: &'a RingBuf<T>) -> Option<&T> {
         match self {
             BufferLocation::Head => from.head(),
             BufferLocation::At(idx) => from.get(idx.get()),
