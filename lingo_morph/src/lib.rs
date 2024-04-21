@@ -11,6 +11,8 @@ pub mod processors;
 pub mod source;
 pub mod location;
 
+mod buf;
+
 // This mimics the log crate to avoid checking for the feature available
 #[macro_use]
 mod log;
