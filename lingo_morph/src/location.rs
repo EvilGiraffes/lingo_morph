@@ -1,3 +1,21 @@
+pub trait Tracker {
+    type DecrementErr: Error + 'static;
+
+    fn location(&self) -> Location;
+
+    fn inc_from_slice(&mut self, from: &[u8]);
+
+    fn dec_to(&mut self, to: Location) -> Result<(), Self::DecrementErr>;
+
+    fn inc_from_u32(&mut self, from: u32) {
+        self.inc_from_slice(&from.to_le_bytes())
+    }
+
+    fn inc_from_char(&mut self, from: char) {
+        self.inc_from_u32(from as u32)
+    }
+}
+
 #[derive(Debug, Default, Clone, Copy)]
 pub struct Location {
     line: usize,
