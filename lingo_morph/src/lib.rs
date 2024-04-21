@@ -9,6 +9,7 @@ pub mod context;
 pub mod processed;
 pub mod processors;
 pub mod source;
+pub mod location;
 
 // This mimics the log crate to avoid checking for the feature available
 #[macro_use]
