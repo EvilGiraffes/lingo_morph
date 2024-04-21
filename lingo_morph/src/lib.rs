@@ -1,7 +1,5 @@
 pub use processed::{done, err, mismatch};
 
-use std::{marker::PhantomData, ptr::NonNull};
-
 use context::With;
 use processed::{Processed, ProcessingError, Status};
 use source::{Location, Source};
@@ -21,22 +19,6 @@ pub trait Processor<I> {
     fn process<S>(&mut self, given: S) -> Processed<Self::Output, S>
     where
         S: Source<Item = I>;
-
-    fn as_ref(&mut self) -> Ref<'_, Self>
-    where
-        Self: Sized,
-    {
-        let ptr = NonNull::new(self).expect("Self cannot be a null reference");
-        Ref(ptr, PhantomData)
-    }
-
-    unsafe fn as_ref_unchecked(&mut self) -> Ref<'_, Self>
-    where
-        Self: Sized,
-    {
-        let ptr = NonNull::new_unchecked(self);
-        Ref(ptr, PhantomData)
-    }
 
     fn map<F, R>(self, map: F) -> Map<Self, F>
     where
@@ -147,23 +129,17 @@ pub trait Processor<I> {
     }
 }
 
-#[derive(Debug, Clone, Copy)]
-#[repr(transparent)]
-pub struct Ref<'a, P>(NonNull<P>, PhantomData<&'a mut P>);
-
-impl<P, I> Processor<I> for Ref<'_, P>
+impl<P, I> Processor<I> for &mut P
 where
     P: Processor<I>,
 {
     type Output = P::Output;
 
-    #[inline]
     fn process<S>(&mut self, given: S) -> Processed<Self::Output, S>
     where
         S: Source<Item = I>,
     {
-        let processor = unsafe { self.0.as_mut() };
-        processor.process(given)
+        (**self).process(given)
     }
 }
 
@@ -345,7 +321,7 @@ where
             (output, rest) => match rollback_if_process_fail(fallback, &mut self.1, rest)? {
                 Status::Done(_, rest) => done(output, rest),
                 Status::Mismatch(rest) => mismatch(rest),
-            } 
+            },
         }
     }
 }
