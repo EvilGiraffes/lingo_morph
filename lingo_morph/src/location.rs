@@ -16,12 +16,28 @@ impl Location {
         self
     }
 
+    pub unsafe fn update_line<F>(&mut self, func: F) -> &mut Self 
+    where
+        F: FnOnce(usize) -> usize
+    {
+        self.line = func(self.line);
+        self
+    }
+
     pub fn column(&self) -> usize {
         self.column
     }
 
     pub unsafe fn set_column(&mut self, column: usize) -> &mut Self {
         self.column = column;
+        self
+    }
+
+    pub unsafe fn update_column<F>(&mut self, func: F) -> &mut Self 
+    where
+        F: FnOnce(usize) -> usize
+    {
+        self.column = func(self.line);
         self
     }
 
@@ -34,12 +50,28 @@ impl Location {
         self
     }
 
+    pub unsafe fn update_at_char<F>(&mut self, func: F) -> &mut Self 
+    where
+        F: FnOnce(usize) -> usize
+    {
+        self.at_char = func(self.line);
+        self
+    }
+
     pub fn at_bytes(&self) -> usize {
         self.at_bytes
     }
 
     pub unsafe fn set_at_bytes(&mut self, at_bytes: usize) -> &mut Self {
         self.at_bytes = at_bytes;
+        self
+    }
+
+    pub unsafe fn update_at_bytes<F>(&mut self, func: F) -> &mut Self 
+    where
+        F: FnOnce(usize) -> usize
+    {
+        self.at_bytes = func(self.line);
         self
     }
 }
