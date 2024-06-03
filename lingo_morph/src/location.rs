@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 use std::{error::Error, fmt::Display, num::NonZeroUsize};
 
 use crate::buf::RingBuf;
@@ -64,6 +65,8 @@ impl Tracker for Utf8 {
     }
 }
 
+=======
+>>>>>>> parent of 4050d81 (Added tracker)
 #[derive(Debug, Default, Clone, Copy)]
 pub struct Location {
     line: usize,
