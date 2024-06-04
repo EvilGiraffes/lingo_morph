@@ -1,6 +1,6 @@
 use std::{convert::Infallible, error::Error};
 
-#[derive(Debug, Default, Clone, Copy)]
+#[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
 pub struct Location {
     line: usize,
     column: usize,
@@ -79,9 +79,9 @@ impl Location {
 }
 
 pub trait Tracker<I> {
-    type Error: Error;
+    type Error: Error + 'static;
 
-    fn update(&mut self, from: I) -> Result<(), Self::Error>;
+    fn update(&mut self, from: &I) -> Result<(), Self::Error>;
 
     fn location(&self) -> Location;
 }
@@ -89,10 +89,16 @@ pub trait Tracker<I> {
 #[derive(Debug, Clone, Copy)]
 pub struct CharTracker(Location);
 
+impl CharTracker {
+    pub fn new() -> Self {
+        Self(Location::default())
+    }
+}
+
 impl Tracker<char> for CharTracker {
     type Error = Infallible;
 
-    fn update(&mut self, from: char) -> Result<(), Self::Error> {
+    fn update(&mut self, from: &char) -> Result<(), Self::Error> {
         match from {
             '\n' => unsafe { self.0.update_line(|x| x + 1).set_column(0) },
             _ => unsafe { self.0.update_column(|x| x + 1) },

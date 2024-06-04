@@ -23,15 +23,18 @@ impl<T> RingBuf<T> {
         }
     }
 
+    pub fn iter<'a>(&'a self) -> impl Iterator<Item = &T> + DoubleEndedIterator + 'a {
+        self.buf.iter()
+    }
+
+    #[inline]
     pub fn get(&self, index: usize) -> Option<&T> {
         self.buf.get(index)
     }
 
-    pub fn head(&self) -> Option<&T> {
-        self.buf.back()
-    }
-
-    pub fn tail(&self) -> Option<&T> {
-        self.buf.front()
+    #[inline]
+    pub fn len(&self) -> usize {
+        self.buf.len()
     }
 }
+
