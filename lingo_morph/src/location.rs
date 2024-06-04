@@ -39,7 +39,7 @@ impl Location {
     where
         F: FnOnce(usize) -> usize,
     {
-        self.column = func(self.line);
+        self.column = func(self.column);
         self
     }
 
@@ -56,7 +56,7 @@ impl Location {
     where
         F: FnOnce(usize) -> usize,
     {
-        self.at_char = func(self.line);
+        self.at_char = func(self.at_char);
         self
     }
 
@@ -73,7 +73,7 @@ impl Location {
     where
         F: FnOnce(usize) -> usize,
     {
-        self.at_bytes = func(self.line);
+        self.at_bytes = func(self.at_bytes);
         self
     }
 }

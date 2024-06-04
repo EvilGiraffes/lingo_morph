@@ -99,11 +99,14 @@ where
         match self.buf_pos {
             BufPos::Iter => {
                 let next = self.iter.next();
-                next.clone()
-                    .map(|x| self.tracker.update(&x).map(|_| x))
+                next.as_ref()
+                    .map(|x| {
+                        self.buf.push((self.tracker.location(), x.clone()));
+                        x
+                    })
+                    .map(|x| self.tracker.update(x))
                     .transpose()
-                    .expect("Could not update tracker")
-                    .map(|x| self.buf.push((self.tracker.location(), x)));
+                    .expect("Could not update tracker");
                 next
             }
             BufPos::Buf(idx) => {
@@ -112,9 +115,7 @@ where
                 } else {
                     self.buf_pos = BufPos::Buf(idx + 1)
                 }
-                self.buf
-                    .get(idx)
-                    .map(|(_, x)| x.clone())
+                self.buf.get(idx).map(|(_, x)| x.clone())
             }
         }
     }
@@ -133,14 +134,17 @@ where
         Ok(())
     }
 
+    // FIXME: This is not implemented properly, does not account for buffer
     fn peek(&mut self) -> Option<&Self::Item> {
         self.iter.peek()
     }
 
+    // FIXME: This is not implemented properly, does not account for buffer
     fn peek_mut(&mut self) -> Option<&mut Self::Item> {
         self.iter.peek_mut()
     }
 
+    // FIXME: This is not implemented properly, does not account for buffer
     fn location(&self) -> Location {
         self.tracker.location()
     }

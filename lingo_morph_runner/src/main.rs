@@ -2,9 +2,10 @@ use std::fmt::Debug;
 
 use lingo_morph::{
     location::CharTracker,
+    processed::Processed,
     processors::{any, character, constant_with, digit_range},
     source::{IterSource, Source},
-    Processor, processed::Processed,
+    Processor,
 };
 
 #[allow(unused)]
@@ -41,9 +42,9 @@ impl ParseThisBuilder {
 
 struct ConsumeProcessor<P>(P, usize);
 
-impl<P> Processor<char> for ConsumeProcessor<P> 
+impl<P> Processor<char> for ConsumeProcessor<P>
 where
-    P: Processor<char>
+    P: Processor<char>,
 {
     type Output = P::Output;
 
