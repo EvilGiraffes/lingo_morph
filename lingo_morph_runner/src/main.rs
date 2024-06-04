@@ -45,18 +45,15 @@ impl TempSource {
     }
 }
 
-impl Iterator for TempSource {
+impl Source for TempSource {
     type Item = char;
+    type RollBackErr = Infallible;
 
     fn next(&mut self) -> Option<Self::Item> {
         self.increment();
         let index = self.index();
         self.items.get(index).copied()
     }
-}
-
-impl Source for TempSource {
-    type RollBackErr = Infallible;
 
     fn roll_back(&mut self, _: Location) -> Result<(), Self::RollBackErr> {
         // This wont be implemented for this tempoary test source

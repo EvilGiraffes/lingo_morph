@@ -12,8 +12,12 @@ macro_rules! try_peek {
     };
 }
 
-pub trait Source: Iterator {
+pub trait Source {
+    type Item;
     type RollBackErr: Error + 'static;
+
+    // TODO: Change into Result
+    fn next(&mut self) -> Option<Self::Item>;
 
     fn roll_back(&mut self, to: Location) -> Result<(), Self::RollBackErr>;
 
@@ -37,7 +41,7 @@ pub trait Source: Iterator {
 
     fn next_if_eq<T>(&mut self, other: &T) -> Option<Self::Item>
     where
-        <Self as Iterator>::Item: PartialEq<T>,
+        Self::Item: PartialEq<T>,
     {
         self.next_if(|next| next == other)
     }
