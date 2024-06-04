@@ -1,3 +1,5 @@
+use std::{convert::Infallible, error::Error};
+
 #[derive(Debug, Default, Clone, Copy)]
 pub struct Location {
     line: usize,
@@ -16,9 +18,9 @@ impl Location {
         self
     }
 
-    pub unsafe fn update_line<F>(&mut self, func: F) -> &mut Self 
+    pub unsafe fn update_line<F>(&mut self, func: F) -> &mut Self
     where
-        F: FnOnce(usize) -> usize
+        F: FnOnce(usize) -> usize,
     {
         self.line = func(self.line);
         self
@@ -33,9 +35,9 @@ impl Location {
         self
     }
 
-    pub unsafe fn update_column<F>(&mut self, func: F) -> &mut Self 
+    pub unsafe fn update_column<F>(&mut self, func: F) -> &mut Self
     where
-        F: FnOnce(usize) -> usize
+        F: FnOnce(usize) -> usize,
     {
         self.column = func(self.line);
         self
@@ -50,9 +52,9 @@ impl Location {
         self
     }
 
-    pub unsafe fn update_at_char<F>(&mut self, func: F) -> &mut Self 
+    pub unsafe fn update_at_char<F>(&mut self, func: F) -> &mut Self
     where
-        F: FnOnce(usize) -> usize
+        F: FnOnce(usize) -> usize,
     {
         self.at_char = func(self.line);
         self
@@ -67,11 +69,43 @@ impl Location {
         self
     }
 
-    pub unsafe fn update_at_bytes<F>(&mut self, func: F) -> &mut Self 
+    pub unsafe fn update_at_bytes<F>(&mut self, func: F) -> &mut Self
     where
-        F: FnOnce(usize) -> usize
+        F: FnOnce(usize) -> usize,
     {
         self.at_bytes = func(self.line);
         self
+    }
+}
+
+pub trait Tracker<I> {
+    type Error: Error;
+
+    fn update(&mut self, from: I) -> Result<(), Self::Error>;
+
+    fn location(&self) -> Location;
+}
+
+#[derive(Debug, Clone, Copy)]
+pub struct CharTracker(Location);
+
+impl Tracker<char> for CharTracker {
+    type Error = Infallible;
+
+    fn update(&mut self, from: char) -> Result<(), Self::Error> {
+        match from {
+            '\n' => unsafe { self.0.update_line(|x| x + 1).set_column(0) },
+            _ => unsafe { self.0.update_column(|x| x + 1) },
+        };
+        unsafe {
+            self.0
+                .update_at_char(|x| x + 1)
+                .update_at_bytes(|x| x + from.len_utf8());
+        }
+        Ok(())
+    }
+
+    fn location(&self) -> Location {
+        self.0
     }
 }
