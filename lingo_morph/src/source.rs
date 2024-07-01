@@ -134,18 +134,28 @@ where
         Ok(())
     }
 
-    // FIXME: This is not implemented properly, does not account for buffer
     fn peek(&mut self) -> Option<&Self::Item> {
-        self.iter.peek()
+        match self.buf_pos {
+            BufPos::Iter => self.iter.peek(),
+            BufPos::Buf(idx) => self.buf.get(idx).map(|(_, val)| val),
+        }
     }
 
-    // FIXME: This is not implemented properly, does not account for buffer
     fn peek_mut(&mut self) -> Option<&mut Self::Item> {
-        self.iter.peek_mut()
+        match self.buf_pos {
+            BufPos::Iter => self.iter.peek_mut(),
+            BufPos::Buf(idx) => self.buf.get_mut(idx).map(|(_, val)| val),
+        }
     }
 
-    // FIXME: This is not implemented properly, does not account for buffer
     fn location(&self) -> Location {
-        self.tracker.location()
+        match self.buf_pos {
+            BufPos::Iter => self.tracker.location(),
+            BufPos::Buf(idx) => self
+                .buf
+                .get(idx)
+                .map(|(loc, _)| *loc)
+                .expect("Buffer should contain location"),
+        }
     }
 }

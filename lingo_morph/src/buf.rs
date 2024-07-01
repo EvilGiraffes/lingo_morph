@@ -33,6 +33,11 @@ impl<T> RingBuf<T> {
     }
 
     #[inline]
+    pub fn get_mut(&mut self, index: usize) -> Option<&mut T> {
+        self.buf.get_mut(index)
+    }
+
+    #[inline]
     pub fn len(&self) -> usize {
         self.buf.len()
     }
