@@ -1,15 +1,5 @@
 use std::{convert::Infallible, error::Error};
 
-#[macro_export]
-macro_rules! try_peek {
-    ($source:expr) => {
-        match $source.peek() {
-            Some(val) => val,
-            None => return $crate::processed::mismatch($source),
-        }
-    };
-}
-
 pub trait Source: Sized {
     type Item;
     type Snapshot;
