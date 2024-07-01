@@ -1,8 +1,8 @@
 pub use processed::{done, err, mismatch};
 
 use context::With;
-use processed::{Processed, ProcessingError, Status};
-use source::{Location, Source};
+use processed::{Processed, Status};
+use source::Source;
 
 pub mod collections;
 pub mod context;
@@ -299,7 +299,7 @@ where
     where
         S: Source<Item = I>,
     {
-        let fallback = given.location();
+        let fallback = given.snapshot();
         match try_done!(self.0.process(given)) {
             (_, rest) => rollback_if_process_fail(fallback, &mut self.1, rest),
         }
@@ -319,7 +319,7 @@ where
     where
         S: Source<Item = I>,
     {
-        let fallback = given.location();
+        let fallback = given.snapshot();
         match try_done!(self.0.process(given)) {
             (output, rest) => match rollback_if_process_fail(fallback, &mut self.1, rest)? {
                 Status::Done(_, rest) => done(output, rest),
@@ -351,7 +351,7 @@ where
 }
 
 fn rollback_if_process_fail<P, I, S>(
-    fallback: Location,
+    fallback: S::Snapshot,
     processor: &mut P,
     given: S,
 ) -> Processed<P::Output, S>
@@ -363,7 +363,7 @@ where
         Status::Done(output, rest) => done(output, rest),
         Status::Mismatch(mut rest) => match rest.roll_back(fallback) {
             Ok(_) => mismatch(rest),
-            Err(error) => err(&rest, error),
+            Err(error) => err(error),
         },
     }
 }

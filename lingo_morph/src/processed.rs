@@ -1,47 +1,8 @@
-use std::{error::Error, fmt::Display};
+use std::error;
 
-use crate::source::{Location, Source};
-
-pub type PResult<I, R> = Result<Status<I, R>, ProcessingError>;
+pub type Error = Box<dyn error::Error + 'static>;
+pub type PResult<I, R> = Result<Status<I, R>, Error>;
 pub type Processed<O, R> = PResult<O, R>;
-
-#[derive(Debug)]
-pub struct ProcessingError {
-    location: Location,
-    error: Box<dyn Error>,
-}
-
-impl ProcessingError {
-    pub fn from_source<S, E>(source: &S, error: E) -> Self
-    where
-        S: Source,
-        E: Error + 'static,
-    {
-        Self {
-            location: source.location(),
-            error: Box::new(error),
-        }
-    }
-
-    pub fn error(&self) -> &dyn Error {
-        self.error.as_ref()
-    }
-}
-
-impl Display for ProcessingError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(
-            f,
-            "processing failed at line {} and column {}, after parsing {} bytes: {}",
-            self.location.line(),
-            self.location.column(),
-            self.location.at_bytes(),
-            self.error()
-        )
-    }
-}
-
-impl Error for ProcessingError {}
 
 #[derive(Debug)]
 pub enum Status<O, R> {
@@ -83,19 +44,18 @@ pub fn mismatch<O, R>(rest: R) -> Processed<O, R> {
 
 #[macro_export]
 macro_rules! try_ok {
-    ($processed:expr, $source: expr) => {
+    ($processed:expr) => {
         match $processed {
             Ok(val) => val,
-            Err(error) => return $crate::processed::err($source, error)
+            Err(error) => return $crate::processed::err($source)
         }
     };
 }
 
 #[inline]
-pub fn err<O, R, S, E>(source: &S, error: E) -> Processed<O, R>
+pub fn err<O, R, E>(error: E) -> Processed<O, R>
 where
-    S: Source,
-    E: Error + 'static,
+    E: Into<Error>,
 {
-    Err(ProcessingError::from_source(source, error))
+    Err(error.into())
 }

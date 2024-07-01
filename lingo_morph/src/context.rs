@@ -1,15 +1,15 @@
 use std::fmt::Debug;
 
-use crate::{source::Source, ProcessingError, Processor, Status};
+use crate::{source::Source, Processor, Status, processed};
 
 #[derive(Debug)]
 pub enum ProcessingFailed {
-    DuringProcessing(ProcessingError),
+    DuringProcessing(processed::Error),
     NoReturn,
 }
 
-impl From<ProcessingError> for ProcessingFailed {
-    fn from(value: ProcessingError) -> Self {
+impl From<processed::Error> for ProcessingFailed {
+    fn from(value: processed::Error) -> Self {
         ProcessingFailed::DuringProcessing(value)
     }
 }
@@ -35,7 +35,7 @@ where
         }
     }
 
-    pub fn fold<A, F>(self, init: A, mut func: F) -> Result<A, ProcessingError>
+    pub fn fold<A, F>(self, init: A, mut func: F) -> Result<A, processed::Error>
     where
         F: FnMut(A, P::Output) -> A,
     {

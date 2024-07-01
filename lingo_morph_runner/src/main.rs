@@ -4,7 +4,7 @@ use lingo_morph::{
     location::CharTracker,
     processed::Processed,
     processors::{any, character, constant_with, digit_range},
-    source::{IterSource, Source},
+    source::Source,
     Processor,
 };
 
@@ -52,11 +52,11 @@ where
     where
         S: Source<Item = char>,
     {
-        let location = given.location();
+        let fallback = given.snapshot();
         for _ in 0..self.1 {
             given.next();
         }
-        given.roll_back(location).expect("Could not roll back");
+        given.roll_back(fallback).expect("Could not roll back");
         self.0.process(given)
     }
 }
@@ -96,10 +96,10 @@ fn create_parse_this() -> impl Processor<char, Output = ParseThis> {
 
 fn main() {
     let src_code = "hello_world 50123".chars();
-    let source = IterSource::with_tracker_cap(src_code, CharTracker::new(), 32);
-    let mut processor = ConsumeProcessor(create_parse_this(), 5);
-    match processor.with(source).process() {
-        Ok(value) => println!("{value:#?}"),
-        Err(error) => println!("{error:#?}"),
-    }
+    let source = todo!("Source hasnt been implemented");
+    // let mut processor = ConsumeProcessor(create_parse_this(), 5);
+    // match processor.with(source).process() {
+    //     Ok(value) => println!("{value:#?}"),
+    //     Err(error) => println!("{error:#?}"),
+    // }
 }
