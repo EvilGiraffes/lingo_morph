@@ -1,7 +1,6 @@
 use std::fmt::Debug;
 
 use lingo_morph::{
-    location::CharTracker,
     processed::Processed,
     processors::{any, character, constant_with, digit_range},
     source::Source,
