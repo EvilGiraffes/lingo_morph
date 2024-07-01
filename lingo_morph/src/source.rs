@@ -10,12 +10,14 @@ macro_rules! try_peek {
     };
 }
 
-pub trait Source {
+pub trait Source: Sized {
     type Item;
     type Snapshot;
     type RollBackErr: Error + 'static;
 
     fn next(&mut self) -> Option<Self::Item>;
+
+    fn snapshot(&self) -> Self::Snapshot;
 
     fn roll_back(&mut self, to: Self::Snapshot) -> Result<(), Self::RollBackErr>;
 
@@ -23,7 +25,6 @@ pub trait Source {
 
     fn peek_mut(&mut self) -> Option<&mut Self::Item>;
 
-    fn snapshot(&self) -> Self::Snapshot;
     #[inline]
     fn iter(&mut self) -> Iter<'_, Self> {
         Iter(self)
@@ -41,6 +42,7 @@ pub trait Source {
         }
     }
 
+    #[inline]
     fn next_if_eq<T>(&mut self, other: &T) -> Option<Self::Item>
     where
         Self::Item: PartialEq<T>,
@@ -88,6 +90,7 @@ where
     type Snapshot = usize;
     type RollBackErr = Infallible;
 
+    #[inline]
     fn next(&mut self) -> Option<Self::Item> {
         self.data
             .get(self.idx)
@@ -98,20 +101,24 @@ where
             .cloned()
     }
 
+    #[inline]
+    fn snapshot(&self) -> Self::Snapshot {
+        self.idx
+    }
+
+    #[inline]
     fn roll_back(&mut self, to: Self::Snapshot) -> Result<(), Self::RollBackErr> {
         self.idx = to;
         Ok(())
     }
 
+    #[inline]
     fn peek(&mut self) -> Option<&Self::Item> {
         self.data.get(self.idx)
     }
 
+    #[inline]
     fn peek_mut(&mut self) -> Option<&mut Self::Item> {
         self.data.get_mut(self.idx)
-    }
-
-    fn snapshot(&self) -> Self::Snapshot {
-        self.idx
     }
 }
