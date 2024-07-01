@@ -24,6 +24,10 @@ pub trait Source {
     fn peek_mut(&mut self) -> Option<&mut Self::Item>;
 
     fn snapshot(&self) -> Self::Snapshot;
+    #[inline]
+    fn iter(&mut self) -> Iter<'_, Self> {
+        Iter(self)
+    }
 
     fn next_if<P>(&mut self, predicate: P) -> Option<Self::Item>
     where
@@ -42,6 +46,20 @@ pub trait Source {
         Self::Item: PartialEq<T>,
     {
         self.next_if(|next| next == other)
+    }
+}
+
+pub struct Iter<'a, S>(&'a mut S);
+
+impl<'a, S> Iterator for Iter<'a, S>
+where 
+    S: Source,
+{
+    type Item = S::Item;
+
+    #[inline]
+    fn next(&mut self) -> Option<Self::Item> {
+        self.0.next()
     }
 }
 
