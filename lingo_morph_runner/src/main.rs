@@ -3,7 +3,7 @@ use std::fmt::Debug;
 use lingo_morph::{
     processed::Processed,
     processors::{any, character, constant_with, digit_range},
-    source::Source,
+    source::{Source, BoxedSlice},
     Processor,
 };
 
@@ -94,11 +94,12 @@ fn create_parse_this() -> impl Processor<char, Output = ParseThis> {
 }
 
 fn main() {
-    let src_code = "hello_world 50123".chars();
-    let source = todo!("Source hasnt been implemented");
-    // let mut processor = ConsumeProcessor(create_parse_this(), 5);
-    // match processor.with(source).process() {
-    //     Ok(value) => println!("{value:#?}"),
-    //     Err(error) => println!("{error:#?}"),
-    // }
+    let src_code: Vec<char> = "hello_world 50123".chars().collect();
+    let source = BoxedSlice::from(src_code);
+    let mut processor = ConsumeProcessor(create_parse_this(), 5);
+    // let mut processor = create_parse_this();
+    match processor.with(source).process() {
+        Ok(value) => println!("{value:#?}"),
+        Err(error) => println!("{error:#?}"),
+    }
 }
